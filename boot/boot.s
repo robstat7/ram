@@ -1,4 +1,4 @@
-; Boot loader written in FASM
+; Boot Loader written in FASM
 
 format PE64 EFI
 entry start
