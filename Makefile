@@ -1,8 +1,12 @@
 #
-# Makefile for my_kernel.
+# Makefile for ram.
 #
 
-BOOTx64: boot/boot.s
-	fasm boot/boot.s build/BOOTx64.EFI
+all: build/BOOTx64.EFI build/kernel.o
+
+build/BOOTx64.EFI: boot/boot.s
+	fasm $< $@
+build/kernel.o: kernel/kernel.c
+	gcc -c $< -o $@
 clean:
-	rm -r build/
+	rm -f build/BOOTx64.EFI build/kernel.o
