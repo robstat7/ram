@@ -1,5 +1,6 @@
 #include <efi.h>
 #include <efilib.h> 
+#include <string.h>
 
 UINT64 FileSize(EFI_FILE_HANDLE FileHandle);
 
@@ -29,11 +30,26 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	/* open the file */
   	uefi_call_wrapper(Volume->Open, 5, Volume, &FileHandle, FileName, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
 	
+	/* read file into memory */
 	ReadSize = FileSize(FileHandle);
 	Buffer = AllocatePool(ReadSize);
 
 	uefi_call_wrapper(FileHandle->Read, 3, FileHandle, &ReadSize, Buffer);
 
+	Print(L"loading segs...\n");
+	/* load loadable segments */
+	memcpy((void *)0x0000000000400000, (void *)Buffer, (size_t)0x0000000000000720);	
+	memcpy((void *)0x0000000000401000, (void *)(Buffer + 0x0000000000001000), (size_t)0x000000000013e9a1);	
+	memcpy((void *)0x0000000000540000, (void *)(Buffer + 0x0000000000140000), (size_t)0x0000000000045e1f);	
+	memcpy((void *)0x0000000000586978, (void *)(Buffer + 0x0000000000186978), (size_t)0x0000000000008f60);	
+	
+	/* entry point of bash */
+
+	void (*bash)(void) = (void (*)())0x4033e0;
+	Print(L"executing bash...\n");
+	bash();
+
+	Print(L"I should not be printed!...\n");
 
   	FreePool(loaded_image);
   	FreePool(FileName);
