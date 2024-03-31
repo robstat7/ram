@@ -1,7 +1,11 @@
 /*
  * Program to make ram file system on a block device.
  *
- * usage: ./mkfs /dev/sda2 num_blocks
+ * Ram fs is inspired from MINIX 1.0 FS.
+ *
+ * See disk_layout.png
+ *
+ * usage: ./build/mkfs /dev/sda2 num_blocks
  * num_blocks is num_blocks * 1k blocks.
  *
  * zone size = 4k
