@@ -19,7 +19,7 @@ struct super_block {
 	int num_zone_bit_map_blocks;
 	int first_data_zone;
 	int num_zone_blocks;
-	int max_file_size; /* in bytes */
+	long max_file_size; /* in bytes */
 	int magic_num; /* in decimal */
 };
 
@@ -35,6 +35,8 @@ struct inode {
 	int zone_5;
 	int zone_6;
 };
+
+void verify(int fd);
 
 void main(int argc, char *argv[])
 {
@@ -106,7 +108,6 @@ void main(int argc, char *argv[])
 		printf("wrote zone_bit_map!\n");
 
 
-
 	free(zone_bit_map);
 
 	if (close(fd) == -1) {
@@ -116,4 +117,14 @@ void main(int argc, char *argv[])
 	else {
 		printf("close %s.\n", filename);
 	}
+}
+
+void verify(int fd)
+{
+	int zone_bit_map[10];
+
+	lseek(fd, 2048, SEEK_SET);
+	read(fd, zone_bit_map, sizeof(zone_bit_map));
+	for (int i=0; i< 10; i++)
+		printf("%d\n", zone_bit_map[i]);
 }
