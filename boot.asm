@@ -1,5 +1,4 @@
 ; Boot Loader written in FASM
-
 struc UINT32 {
 	align 4
 	. dd ?
@@ -56,6 +55,56 @@ struc EFI_SYSTEM_TABLE {
 }
 struct EFI_SYSTEM_TABLE
 
+struc EFI_BOOT_SERVICES
+{
+    .Hdr                                    EFI_TABLE_HEADER                  
+    .RaiseTPL                               void  ; EFI_RAISE_TPL                     
+    .RestoreTPL                             void  ; EFI_RESTORE_TPL                   
+    .AllocatePages                          void  ; EFI_ALLOCATE_PAGES                
+    .FreePages                              void  ; EFI_FREE_PAGES                    
+    .GetMemoryMap                           void  ; EFI_GET_MEMORY_MAP                
+    .AllocatePool                           void  ; EFI_ALLOCATE_POOL                 
+    .FreePool                               void  ; EFI_FREE_POOL                     
+    .CreateEvent                            void  ; EFI_CREATE_EVENT                  
+    .SetTimer                               void  ; EFI_SET_TIMER                     
+    .WaitForEvent                           void  ; EFI_WAIT_FOR_EVENT                
+    .SignalEvent                            void  ; EFI_SIGNAL_EVENT                  
+    .CloseEvent                             void  ; EFI_CLOSE_EVENT                   
+    .CheckEvent                             void  ; EFI_CHECK_EVENT                   
+    .InstallProtocolInterface               void  ; EFI_INSTALL_PROTOCOL_INTERFACE    
+    .ReinstallProtocolInterface             void  ; EFI_REINSTALL_PROTOCOL_INTERFACE  
+    .UninstallProtocolInterface             void  ; EFI_UNINSTALL_PROTOCOL_INTERFACE  
+    .HandleProtocol                         void  ; EFI_HANDLE_PROTOCOL               
+    .Reserved                               void
+    .RegisterProtocolNotify                 void  ; EFI_REGISTER_PROTOCOL_NOTIFY               
+    .LocateHandle                           void  ; EFI_LOCATE_HANDLE                          
+    .LocateDevicePath                       void  ; EFI_LOCATE_DEVICE_PATH                     
+    .InstallConfigurationTable              void  ; EFI_INSTALL_CONFIGURATION_TABLE            
+    .LoadImage                              void  ; EFI_IMAGE_LOAD                             
+    .StartImage                             void  ; EFI_IMAGE_START                            
+    .Exit                                   void  ; EFI_EXIT                                   
+    .UnloadImage                            void  ; EFI_IMAGE_UNLOAD                           
+    .ExitBootServices                       void  ; EFI_EXIT_BOOT_SERVICES                     
+    .GetNextMonotonicCount                  void  ; EFI_GET_NEXT_MONOTONIC_COUNT               
+    .Stall                                  void  ; EFI_STALL                                  
+    .SetWatchdogTimer                       void  ; EFI_SET_WATCHDOG_TIMER                     
+    .ConnectController                      void  ; EFI_CONNECT_CONTROLLER                     
+    .DisconnectController                   void  ; EFI_DISCONNECT_CONTROLLER                  
+    .OpenProtocol                           void  ; EFI_OPEN_PROTOCOL                          
+    .CloseProtocol                          void  ; EFI_CLOSE_PROTOCOL                         
+    .OpenProtocolInformation                void  ; EFI_OPEN_PROTOCOL_INFORMATION              
+    .ProtocolsPerHandle                     void  ; EFI_PROTOCOLS_PER_HANDLE                   
+    .LocateHandleBuffer                     void  ; EFI_LOCATE_HANDLE_BUFFER                   
+    .LocateProtocol                         void  ; EFI_LOCATE_PROTOCOL                        
+    .InstallMultipleProtocolInterfaces      void  ; EFI_INSTALL_MULTIPLE_PROTOCOL_INTERFACES   
+    .UninstallMultipleProtocolInterfaces    void  ; EFI_UNINSTALL_MULTIPLE_PROTOCOL_INTERFACES 
+    .CalculateCrc32                         void  ; EFI_CALCULATE_CRC32                        
+    .CopyMem                                void  ; EFI_COPY_MEM                               
+    .SetMem                                 void  ; EFI_SET_MEM                                
+    .CreateEventEx                          void  ; EFI_CREATE_EVENT_EX                        
+}
+struct EFI_BOOT_SERVICES
+
 format PE64 EFI
 
 entry start
@@ -67,11 +116,50 @@ start:
 	mov [ImageHandle], rcx
 	mov [SystemTable], rdx
 	
+	mov rdx, [SystemTable]
+ 
+	sub rsp, 5*8
+
+	mov rax, [rdx+EFI_SYSTEM_TABLE.BootServices]
+	mov rax, [rax+EFI_BOOT_SERVICES.GetMemoryMap]
+	lea rcx, [MemoryMapSize]
+	lea rdx, [MemoryMap]
+	lea r8, [MapKey]
+	lea r9, [DescriptorSize]
+	lea r10, [DescriptorVersion]
+	mov qword[rsp + 8*4], r10
+
+	call rax
+
+	add rsp, 5*8
+;--------------------------------------------
+	mov rdx,[SystemTable]
+	
+	push rbp
+	sub rsp,0x20
+	
+	mov rcx,[rdx+EFI_SYSTEM_TABLE.ConOut]
+	mov rcx,[rcx+EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL.OutputString]
+	
+	cmp rax, 0 ; EFI_SUCCESS
+	jne .Fail
+.Success:
+	mov rdx,TestOkText
+	jmp .End
+	
+.Fail:
+	mov rdx,TestNotOkText
+	jmp .End
+
+
+
 	; set up the GDT
 	cli
 	lgdt [gdt64.pointer]
 	sti
-
+.End:
+	call rcx
+	add rsp,0x20
 	; hang here
 	jmp $
 
@@ -99,3 +187,11 @@ section '.data' data readable writeable
 
 ImageHandle   dq ?
 SystemTable   dq ?
+MemoryMapSize      dq 1024*1024		; 1 MB should be enough
+MemoryMap          rb MemoryMapSize	; buffer for memory map
+MapKey             dq ?
+DescriptorSize     dq ?
+DescriptorVersion  dd ?    
+msg 	      du "Loading system ...", 10, 0
+TestOkText:           du 'Test OK',0
+TestNotOkText:           du 'Test Not OK',0
