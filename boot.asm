@@ -179,13 +179,16 @@ start:
     	mov r9, [r9 + EFI_SYSTEM_TABLE.BootServices]
     	call [r9 + EFI_BOOT_SERVICES.LocateProtocol]
 	
-	cmp rax, 0 ; EFI_SUCCESS
-	jne .Fail
+	; get the framebuffer
+    	mov rcx, [GOP_Handle]
+	mov rdx, [rcx + EFI_GRAPHICS_OUTPUT_PROTOCOL.Mode]
+	mov r8, [rdx + EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE.FrameBufferBase]
+	mov [Frame_Buffer_Base], r8
 
-	mov rdx,TestOkText
-	jmp .End
-
-
+	mov r8, [rdx + EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE.FrameBufferSize]
+	mov [Frame_Buffer_Size], r8
+	
+	; get memory map
 	mov rdx, [SystemTable]
  
 	sub rsp, 5*8
@@ -206,6 +209,7 @@ start:
 	cmp rax, 0 ; EFI_SUCCESS
 	jne .Fail
 .Success:
+	; exit boot services
 	mov rdx,[SystemTable]
 
 	mov rax, [rdx+EFI_SYSTEM_TABLE.BootServices]
@@ -214,10 +218,8 @@ start:
 	mov rdx, [MapKey]
 
 	call rax
-	
-	mov word [0xb8000], 0x0248 ; H
 	hlt
-
+	
 .Fail:
 	mov rdx,TestNotOkText
 	jmp .End
@@ -275,3 +277,5 @@ TestNotOkText:           du 'Test Not OK',0
 TestNotOkText2:           du 'Exit boot services failed!',0
 EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID    db 0xde, 0xa9, 0x42, 0x90, 0xdc, 0x23, 0x38, 0x4a, 0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a
 GOP_Handle            dq    EFI_GRAPHICS_OUTPUT_PROTOCOL
+Frame_Buffer_Base     dq ?
+Frame_Buffer_Size     dq ?
