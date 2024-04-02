@@ -179,7 +179,7 @@ start:
     	mov r9, [r9 + EFI_SYSTEM_TABLE.BootServices]
     	call [r9 + EFI_BOOT_SERVICES.LocateProtocol]
 	
-	; get the framebuffer
+	; store the framebuffer
     	mov rcx, [GOP_Handle]
 	mov rdx, [rcx + EFI_GRAPHICS_OUTPUT_PROTOCOL.Mode]
 	mov r8, [rdx + EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE.FrameBufferBase]
