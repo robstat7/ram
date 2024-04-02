@@ -132,32 +132,36 @@ start:
 	call rax
 
 	add rsp, 5*8
-;--------------------------------------------
-	mov rdx,[SystemTable]
-	
-	push rbp
-	sub rsp,0x20
-	
-	mov rcx,[rdx+EFI_SYSTEM_TABLE.ConOut]
-	mov rcx,[rcx+EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL.OutputString]
 	
 	cmp rax, 0 ; EFI_SUCCESS
 	jne .Fail
 .Success:
-	mov rdx,TestOkText
-	jmp .End
-	
+	mov rdx,[SystemTable]
+
+	mov rax, [rdx+EFI_SYSTEM_TABLE.BootServices]
+	mov rax, [rax+EFI_BOOT_SERVICES.ExitBootServices]
+	mov rcx, ImageHandle
+	mov rdx, [MapKey]
+
+	call rax
+
 .Fail:
 	mov rdx,TestNotOkText
 	jmp .End
-
-
 
 	; set up the GDT
 	cli
 	lgdt [gdt64.pointer]
 	sti
 .End:
+	mov rax,[SystemTable]
+        
+        push rbp
+        sub rsp,0x20
+        
+        mov rcx,[rax+EFI_SYSTEM_TABLE.ConOut]
+        mov rcx,[rcx+EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL.OutputString]
+
 	call rcx
 	add rsp,0x20
 	; hang here
@@ -195,3 +199,4 @@ DescriptorVersion  dd ?
 msg 	      du "Loading system ...", 10, 0
 TestOkText:           du 'Test OK',0
 TestNotOkText:           du 'Test Not OK',0
+TestNotOkText2:           du 'Exit boot services failed!',0
