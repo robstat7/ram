@@ -1,4 +1,9 @@
 ; Boot Loader written in FASM
+struc UINT8
+{
+    . db ?
+}
+
 struc UINT32 {
 	align 4
 	. dd ?
@@ -105,6 +110,56 @@ struc EFI_BOOT_SERVICES
 }
 struct EFI_BOOT_SERVICES
 
+; Graphics
+struc EFI_GRAPHICS_OUTPUT_BLT_PIXEL
+{
+    .Blue                   UINT8
+    .Green                  UINT8
+    .Red                    UINT8
+    .Reserved               UINT8
+}
+struct EFI_GRAPHICS_OUTPUT_BLT_PIXEL
+
+struc EFI_PIXEL_BITMASK
+{
+    .RedMask                UINT32    
+    .GreenMask              UINT32    
+    .BlueMask               UINT32    
+    .ReservedMask           UINT32    
+}
+struct EFI_PIXEL_BITMASK
+
+struc EFI_GRAPHICS_OUTPUT_MODE_INFORMATION
+{
+    .Version                UINT32
+    .HorizontalResolution   UINT32
+    .VerticalResolution     UINT32
+    .PixelFormat            UINT32
+    .PixelInformation       EFI_PIXEL_BITMASK        
+    .PixelsPerScanLine      UINT32
+}
+struct EFI_GRAPHICS_OUTPUT_MODE_INFORMATION
+
+struc EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE
+{
+    .MaxMode                UINT32
+    .Mode                   UINT32
+    .Info                   EFI_GRAPHICS_OUTPUT_MODE_INFORMATION
+    .SizeOfInfo             void
+    .FrameBufferBase        void
+    .FrameBufferSize        void
+}
+struct EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE
+
+struc EFI_GRAPHICS_OUTPUT_PROTOCOL
+{
+    .QueryMode              void
+    .SetMode                void
+    .Blt                    void
+    .Mode                   EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE        
+}
+struct EFI_GRAPHICS_OUTPUT_PROTOCOL
+
 format PE64 EFI
 
 entry start
@@ -115,7 +170,22 @@ start:
 	; store the image handle and the system table passed by the firmware
 	mov [ImageHandle], rcx
 	mov [SystemTable], rdx
+
+	; detect GOP
+	mov rcx, EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID
+	mov rdx, 0
+    	lea r8, [GOP_Handle]
+    	mov r9, [SystemTable]
+    	mov r9, [r9 + EFI_SYSTEM_TABLE.BootServices]
+    	call [r9 + EFI_BOOT_SERVICES.LocateProtocol]
 	
+	cmp rax, 0 ; EFI_SUCCESS
+	jne .Fail
+
+	mov rdx,TestOkText
+	jmp .End
+
+
 	mov rdx, [SystemTable]
  
 	sub rsp, 5*8
@@ -144,6 +214,9 @@ start:
 	mov rdx, [MapKey]
 
 	call rax
+	
+	mov word [0xb8000], 0x0248 ; H
+	hlt
 
 .Fail:
 	mov rdx,TestNotOkText
@@ -200,3 +273,5 @@ msg 	      du "Loading system ...", 10, 0
 TestOkText:           du 'Test OK',0
 TestNotOkText:           du 'Test Not OK',0
 TestNotOkText2:           du 'Exit boot services failed!',0
+EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID    db 0xde, 0xa9, 0x42, 0x90, 0xdc, 0x23, 0x38, 0x4a, 0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a
+GOP_Handle            dq    EFI_GRAPHICS_OUTPUT_PROTOCOL
