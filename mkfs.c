@@ -1,7 +1,7 @@
 /*
- * Program to make ram file system on a block device.
+ * program to make Raam file system on a block device.
  *
- * Ram fs is inspired from MINIX 1.0 FS.
+ * Raam fs is inspired from MINIX 1.0 FS.
  *
  * See disk_layout.png
  *
