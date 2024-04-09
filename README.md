@@ -16,9 +16,9 @@ Please visit [|| Raam || pronunciation](https://www.youtube.com/watch?v=fJbmft2T
 # About || Raam || name
 
 Spiritual upliftment of mankind in the form of liberation from the bondage of
-repeated births and deaths is a proven reality when a human chants RAAM RAAM
+repeated births and deaths is a proven reality when a human chants **RAAM RAAM**
 with his inhale and exhale breathing as introduced by His Holiness **Ādi Sataguru
-Sukharāma Jī Mahārāja**. Mahārāja brought this **Kaivalya-Jñāna** Science. So one can
+Sukharāma Jī Mahārāja**. Mahārāja brought this **Kaivalya-Jñāna** science. So one can
 attain ultimate salvation while alive.
 
 Hackers, hobbyists, enthusiasts, and users knowing the Hindi language can visit
