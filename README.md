@@ -11,7 +11,7 @@ Updates on my work can be read at [Discussions](https://github.com/robstat7/Raam
 
 # || Raam || pronunciation
 
-Please visit [|| Raam || pronunciation](https://www.youtube.com/watch?v=fJbmft2TRws).
+Please watch [|| Raam || pronunciation](https://www.youtube.com/watch?v=fJbmft2TRws).
 
 # About || Raam || name
 
