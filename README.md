@@ -38,8 +38,16 @@ This is the only way to attain salvation. There is no other solution in the
 universe. ||
 <br/><br/>
 
-Hackers, hobbyists, enthusiasts, and users knowing the Hindi language can visit
-[this YouTube channel](https://www.youtube.com/@dr.pavanchandak8939) for Satsang (spiritual discourse).
+Sumeeran - bhajan (recitation) method can be learned from the following video:
+
+    https://www.youtube.com/watch?v=WgbibK3yrWg
+
+Hackers, hobbyists, enthusiasts, and users knowing the Hindi language can
+visit the following YouTube channels for Satsang (spiritual discourse):
+
+    https://www.youtube.com/@dr.pavanchandak8939
+
+    https://www.youtube.com/@ramdwarapune-shanupandit9764
 <br/><br/>
 
 🙏 🌹 Raam Raam sa 🌹 🙏
