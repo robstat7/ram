@@ -38,7 +38,7 @@ This is the only way to attain salvation. There is no other solution in the
 universe. ||
 <br/><br/>
 
-Sumeeran - bhajan (recitation) method can be learned from the following video:
+Sumiran-bhajan (chanting) method can be learned from the following video:
 
 &nbsp;&nbsp;&nbsp;&nbsp;[Ramdwara Pune || सुमीरन-भजन की विधी || Shanu Pandit](https://www.youtube.com/watch?v=WgbibK3yrWg)
 
