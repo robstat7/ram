@@ -21,9 +21,9 @@ with his inhale and exhale breathing as introduced by His Holiness **Ādi Satagu
 Sukharāma Jī Mahārāja**. Mahārāja brought this **Kaivalya-Jñāna** science. So one can
 attain ultimate salvation while alive.
 
-भेद सहित ग्यान घट आवे,
-प्रेम भाव नेद्यो मन पावे ।
-मोख मिलण की ओई उपाई,
+भेद सहित ग्यान घट आवे,  
+प्रेम भाव नेद्यो मन पावे ।  
+मोख मिलण की ओई उपाई,  
 दूजी नहीं सृष्ट मे भाई ॥
 
 THAT whose nature is true, which is not lacking in all three periods. It never
