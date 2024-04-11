@@ -22,10 +22,10 @@ Sukharāma Jī Mahārāja**. Mahārāja brought this **Kaivalya-Jñāna** scienc
 attain ultimate salvation while alive.
 <br/><br/>
 
-भेद सहित ग्यान घट आवे,  
-प्रेम भाव नेद्यो मन पावे ।  
-मोख मिलण की ओई उपाई,  
-दूजी नहीं सृष्ट मे भाई ॥
+#### भेद सहित ग्यान घट आवे,  
+#### प्रेम भाव नेद्यो मन पावे ।  
+#### मोख मिलण की ओई उपाई,  
+#### दूजी नहीं सृष्ट मे भाई ॥
 
 THAT whose nature is true, which is not lacking in all three periods. It never
 happened before, such a time has never come and will never come. Such a time
