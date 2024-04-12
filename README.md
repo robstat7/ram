@@ -17,9 +17,9 @@ Please watch [|| Raam || pronunciation](https://www.youtube.com/watch?v=fJbmft2T
 
 Spiritual upliftment of mankind in the form of liberation from the bondage of
 repeated births and deaths is a proven reality when a human chants **RAAM RAAM**
-with his inhale and exhale breathing as introduced by His Holiness **Ādi Sataguru
-Sukharāma Jī Mahārāja**. Mahārāja brought this **Kaivalya-Jñāna** science. So one can
-attain ultimate salvation while alive.
+with his inhale and exhale breathing as introduced by His Holiness **Ādi
+(the first) Sataguru Sukharāma Jī Mahārāja**. Mahārāja brought this
+**Kaivalya-Jñāna** science. So one can attain ultimate salvation while alive.
 <br/><br/>
 
 ### भेद सहित ग्यान घट आवे,  
