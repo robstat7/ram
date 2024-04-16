@@ -3,8 +3,10 @@
  */
 #include <efi.h>
 #include <efilib.h>
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 /* structure to hold frame buffer information */
@@ -28,6 +30,10 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	int i;
 	uint32_t mode;
 	struct frame_buffer_descriptor *frame_buffer;
+    	UINTN map_key = 0;
+    	UINTN descriptor_size = 0;
+    	UINTN memory_map_size = 1024*1024;			/* 1 MB should be enough */
+	EFI_MEMORY_DESCRIPTOR *memory_map;
 
 	InitializeLib(ImageHandle, SystemTable);
 
@@ -74,6 +80,27 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			frame_buffer->pixels_per_scan_line = gop->Mode->Info->PixelsPerScanLine;
 		}
 	}
+
+	memory_map = malloc(memory_map_size);
+	if (memory_map == NULL) {
+		Print(L"error: could not allocate memory for the memroy map!\n");
+	} else {
+		/* get memory map */
+		status = uefi_call_wrapper(BS->GetMemoryMap, 4, &memory_map_size, memory_map, &map_key, &descriptor_size);
+		if(EFI_ERROR(status)) {
+			Print(L"error: could not get memory map!\n");
+		} else {
+			/* exit boot services */
+			status = uefi_call_wrapper(BS->ExitBootServices, 2, ImageHandle, map_key);
+			if(EFI_ERROR(status)) {
+				Print(L"error: could not exit boot services!\n");
+				goto end;
+			}
+		}
+	}
+
+end:
+	free(memory_map);
 
 	/* hang here */
 	while(1) {
