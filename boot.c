@@ -8,15 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "include/frame_buffer.h"
 
-/* structure to hold frame buffer information */
-struct frame_buffer_descriptor {
-	long unsigned int *frame_buffer_base;
-	unsigned int frame_buffer_size;
-	unsigned short horizontal_resolution;
-	unsigned short vertical_resolution;
-	unsigned short pixels_per_scan_line;
-};
+void fill_color(unsigned short horizontal_resolution, unsigned short vertical_resolution, long unsigned int *frame_buffer_base, long unsigned int bg_color);
 
 EFI_STATUS
 EFIAPI
@@ -29,11 +23,13 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	UINTN SizeOfInfo, numModes, nativeMode;
 	int i;
 	uint32_t mode;
-	struct frame_buffer_descriptor *frame_buffer;
-    	UINTN map_key = 0;
-    	UINTN descriptor_size = 0;
-    	UINTN memory_map_size = 1024*1024;			/* 1 MB should be enough */
-	EFI_MEMORY_DESCRIPTOR *memory_map;
+	struct frame_buffer_descriptor frame_buffer;
+	uint8_t mmap[4900];
+    	UINTN msize = sizeof(mmap);
+	UINTN mkey = 0;
+	UINTN dsize = 0;
+	UINT32 dversion;
+
 
 	InitializeLib(ImageHandle, SystemTable);
 
@@ -73,38 +69,65 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			Print(L"error: unable to set video mode %03d\n", mode);
 		} else {
 			/* store framebuffer information */
-			frame_buffer->frame_buffer_base = (long unsigned int *) gop->Mode->FrameBufferBase;
-			frame_buffer->frame_buffer_size = gop->Mode->FrameBufferSize;
-			frame_buffer->horizontal_resolution = gop->Mode->Info->HorizontalResolution;
-			frame_buffer->vertical_resolution = gop->Mode->Info->VerticalResolution;
-			frame_buffer->pixels_per_scan_line = gop->Mode->Info->PixelsPerScanLine;
+			frame_buffer.frame_buffer_base = (long unsigned int *) gop->Mode->FrameBufferBase;
+			frame_buffer.frame_buffer_size = gop->Mode->FrameBufferSize;
+			frame_buffer.horizontal_resolution = gop->Mode->Info->HorizontalResolution;
+			frame_buffer.vertical_resolution = gop->Mode->Info->VerticalResolution;
+			frame_buffer.pixels_per_scan_line = gop->Mode->Info->PixelsPerScanLine;
 		}
 	}
 
-	memory_map = malloc(memory_map_size);
-	if (memory_map == NULL) {
-		Print(L"error: could not allocate memory for the memroy map!\n");
-	} else {
+	Print(L"fb_base=%p\n", (void *) frame_buffer.frame_buffer_base);
+
+	/* initialize terminal driver */
+	/* tty_init(frame_buffer); */
+
+	/* try to exit boot services 3 times */
+  	for (i = 0; i < 3; i++) {
 		/* get memory map */
-		status = uefi_call_wrapper(BS->GetMemoryMap, 4, &memory_map_size, memory_map, &map_key, &descriptor_size);
+		status = uefi_call_wrapper(BS->GetMemoryMap, 5, &msize, &mmap, &mkey, &dsize, NULL);
 		if(EFI_ERROR(status)) {
 			Print(L"error: could not get memory map!\n");
-		} else {
+			goto end;
+		} else if (status == EFI_SUCCESS) {
+			/* Print(L"got memory map!\n"); */
+			/* Print(L"mkey=%d\n", (int) mkey); */
+
 			/* exit boot services */
-			status = uefi_call_wrapper(BS->ExitBootServices, 2, ImageHandle, map_key);
-			if(EFI_ERROR(status)) {
-				Print(L"error: could not exit boot services!\n");
-				goto end;
-			}
+			status = uefi_call_wrapper(BS->ExitBootServices, 2, ImageHandle, mkey);
+			if (status == EFI_SUCCESS)
+				break;
 		}
 	}
+	if(status == EFI_INVALID_PARAMETER) {
+		Print(L"error: exit boot services: map key is incorrect!\n");
+		goto end;
+	}
+	
+
+	/* test: write a char onto the terminal */
+	/* write_char("A", 0, 0, 0xFFFFFF, 0x00000); */
+
+	/* red color */
+	fill_color(frame_buffer.horizontal_resolution, frame_buffer.vertical_resolution, frame_buffer.frame_buffer_base, 0xAA0000);
 
 end:
-	free(memory_map);
+	// free(memory_map);
 
 	/* hang here */
 	while(1) {
 	}
 
 	return 1;
+}
+
+void fill_color(unsigned short horizontal_resolution, unsigned short vertical_resolution, long unsigned int *frame_buffer_base, long unsigned int bg_color)
+{
+	
+	unsigned int pixels = horizontal_resolution * vertical_resolution;
+	uint32_t* addr = frame_buffer_base;
+	
+	while (pixels--) {
+		*addr++ = bg_color;
+	}
 }
