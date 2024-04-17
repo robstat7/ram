@@ -5,13 +5,19 @@
 #include "include/fonts.h"
 #include <stdint.h>
 
-struct frame_buffer_descriptor frame_buffer;
-// const int font_width = 8;
-// const int font_height = 8;
+/* terminal output coordinates */
 int tty_x;
 int tty_y;
-uint32_t tty_fgcolor = 0x000000; /* tty text color */
-uint32_t tty_bgcolor = 0xffffff;
+
+uint32_t tty_fgcolor = 0x000000; /* tty text color = black */
+uint32_t tty_bgcolor = 0xffffff; /* white */
+
+const int tty_page_x_coord = 11; /* tty visible page x coord */
+const int tty_page_y_coord = 11; /* tty visible page y coord */
+const int tty_page_width = 626;
+const int line_separator_space = 2;
+
+struct frame_buffer_descriptor frame_buffer;
 
 static inline void write_pixel(uint32_t pixel, int x, int y)
 {
@@ -34,9 +40,9 @@ void write_char(unsigned char c)
 	}
 
 	/* update tty output coords */
-	if((tty_x + cx) >= 626) { // 615 old
-		tty_x = 11;
-		tty_y += cy + 2;
+	if((tty_x + cx) >= tty_page_width) { // 615 old
+		tty_x = tty_page_x_coord;
+		tty_y += cy + line_separator_space;
 	} else {
 		tty_x = tty_x + cx;
 	}
@@ -46,22 +52,14 @@ void write_str(char *str)
 {
 	int i;
 
-	for (i = 0; str[i] != '\0'; i++) {
+	for (i = 0; str[i] != '\0'; i++)
 		write_char(str[i]);
-
-		// if((tty_x + font_width) >= 626) { // 615 old
-		// 	tty_x = 11;
-		// 	tty_y += font_height + 2;
-		// } else {
-		// 	tty_x = tty_x + font_width;
-		// }
-	}
 }
 
 void tty_out_init(struct frame_buffer_descriptor fb) {
 	frame_buffer = fb;
 
 	/* init terminal output coordinates */
-	tty_x = 11;
-	tty_y = 11;
+	tty_x = tty_page_x_coord;
+	tty_y = tty_page_y_coord;
 }
