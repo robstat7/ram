@@ -109,7 +109,8 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	/* test: write characters onto the terminal */
 	/* write_char('B', 0, 0, 0x00000, 0xffffff); */
 
-	write_str("Hello World! Raam Raam sa! The development is going on...", 0, 0, 0x00000, 0xffffff);
+	write_str("Raam Raam sa. Wow Kernel development is cool. Kernel development is hard. Take it easy my man...!Bali is predominantly a Hindu country. Bali is known for its elaborate, traditional dancing. The dancing is inspired by its Hindi beliefs. Most of the dancing portrays tales of good versus evil. To watch the dancing is a breathtaking experience. Lombok has some impressive points of interest – the majestic Gunung Rinjani is an active volcano. It is the second highest peak in Indonesia. Art is a Balinese passion. Batik paintings and carved statues make popular souvenirs. Artists can be seen whittling and painting on the streets, particularly in Ubud. It is easy to appreciate each island as an attractive tourist destination. Majestic scenery; rich culture; white sands and warm, azure waters draw visitors like magnets every year.", 11, 11, 0x000000, 0xffffff);
+	// write_str("Raam Raam sa. Kernel development is cool. Kernel development.", 11, 21, 0x000000, 0xffffff);
 
 end:
 	/* hang here */

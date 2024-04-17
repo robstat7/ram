@@ -35,23 +35,17 @@ void write_str(char *str, int x, int y, uint32_t fgcolor, uint32_t bgcolor)
 	int i;
 	int pos_x;
 	int pos_y;
-	int new_line;
 
-	new_line = 0;
 	pos_x = x;
 	pos_y = y;
 	for (i = 0; str[i] != '\0'; i++) {
 		write_char(str[i], pos_x, pos_y, fgcolor, bgcolor);
-		if ((pos_x + font_width) >= frame_buffer.pixels_per_scan_line) {
-			new_line = 1;
-			pos_x = (pos_x + font_width) % frame_buffer.pixels_per_scan_line;
+
+		if((pos_x + font_width) >= 626) { // 615 old
+			pos_x = 11;
+			pos_y += font_height + 2;
 		} else {
 			pos_x = pos_x + font_width;
-		}
-		
-		if (new_line == 1) {
-			pos_y = (pos_y + font_height);
-			new_line = 0;
 		}
 	}
 }
