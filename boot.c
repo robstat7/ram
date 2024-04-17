@@ -107,8 +107,9 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	tty_init(frame_buffer);
 
 	/* test: write characters onto the terminal */
-	write_char('B', 0, 0, 0x00000, 0xffffff);
-	write_char('q', 8, 0, 0x00000, 0xffffff);
+	/* write_char('B', 0, 0, 0x00000, 0xffffff); */
+
+	write_str("Hello World! Raam Raam sa! The development is going on...", 0, 0, 0x00000, 0xffffff);
 
 end:
 	/* hang here */
