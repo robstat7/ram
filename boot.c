@@ -104,13 +104,20 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	fill_tty_bgcolor(frame_buffer.horizontal_resolution, frame_buffer.vertical_resolution, frame_buffer.frame_buffer_base, 0xffffff);
 
 	/* initialize terminal driver */
-	tty_init(frame_buffer);
+	tty_out_init(frame_buffer);
 
 	/* test: write characters onto the terminal */
-	/* write_char('B', 0, 0, 0x00000, 0xffffff); */
+	for(i = 0; i < 200; i++) {
+		write_char('A');
+		write_char('B');
+	}
 
-	write_str("Raam Raam sa. Wow Kernel development is cool. Kernel development is hard. Take it easy my man...!Bali is predominantly a Hindu country. Bali is known for its elaborate, traditional dancing. The dancing is inspired by its Hindi beliefs. Most of the dancing portrays tales of good versus evil. To watch the dancing is a breathtaking experience. Lombok has some impressive points of interest – the majestic Gunung Rinjani is an active volcano. It is the second highest peak in Indonesia. Art is a Balinese passion. Batik paintings and carved statues make popular souvenirs. Artists can be seen whittling and painting on the streets, particularly in Ubud. It is easy to appreciate each island as an attractive tourist destination. Majestic scenery; rich culture; white sands and warm, azure waters draw visitors like magnets every year.", 11, 11, 0x000000, 0xffffff);
-	// write_str("Raam Raam sa. Kernel development is cool. Kernel development.", 11, 21, 0x000000, 0xffffff);
+	write_str("Raam Raam sa. Kernel development is cool. Kernel development.");
+	write_str("My name is Dileep Sankhla.");
+	write_str("My friend's name is Aditya.");
+	write_char('q');
+	write_char('p');
+	write_str("My laptop is working smoothly atm.");
 
 end:
 	/* hang here */
