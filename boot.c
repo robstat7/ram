@@ -10,7 +10,7 @@
 #include <time.h>
 #include "include/frame_buffer.h"
 
-void fill_color(unsigned short horizontal_resolution, unsigned short vertical_resolution, long unsigned int *frame_buffer_base, long unsigned int bg_color);
+void fill_tty_bgcolor(unsigned short horizontal_resolution, unsigned short vertical_resolution, long unsigned int *frame_buffer_base, long unsigned int bg_color);
 
 EFI_STATUS
 EFIAPI
@@ -77,11 +77,9 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		}
 	}
 
-	Print(L"fb_base=%p\n", (void *) frame_buffer.frame_buffer_base);
 
-	/* initialize terminal driver */
-	/* tty_init(frame_buffer); */
-
+	/* Print(L"fb_base=%p\n", (void *) frame_buffer.frame_buffer_base); */
+	
 	/* try to exit boot services 3 times */
   	for (i = 0; i < 3; i++) {
 		/* get memory map */
@@ -90,9 +88,6 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			Print(L"error: could not get memory map!\n");
 			goto end;
 		} else if (status == EFI_SUCCESS) {
-			/* Print(L"got memory map!\n"); */
-			/* Print(L"mkey=%d\n", (int) mkey); */
-
 			/* exit boot services */
 			status = uefi_call_wrapper(BS->ExitBootServices, 2, ImageHandle, mkey);
 			if (status == EFI_SUCCESS)
@@ -103,17 +98,19 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		Print(L"error: exit boot services: map key is incorrect!\n");
 		goto end;
 	}
-	
 
-	/* test: write a char onto the terminal */
-	/* write_char("A", 0, 0, 0xFFFFFF, 0x00000); */
 
-	/* red color */
-	fill_color(frame_buffer.horizontal_resolution, frame_buffer.vertical_resolution, frame_buffer.frame_buffer_base, 0xAA0000);
+	/* fill terminal background color with white */
+	fill_tty_bgcolor(frame_buffer.horizontal_resolution, frame_buffer.vertical_resolution, frame_buffer.frame_buffer_base, 0xffffff);
+
+	/* initialize terminal driver */
+	tty_init(frame_buffer);
+
+	/* test: write characters onto the terminal */
+	write_char('B', 0, 0, 0x00000, 0xffffff);
+	write_char('q', 8, 0, 0x00000, 0xffffff);
 
 end:
-	// free(memory_map);
-
 	/* hang here */
 	while(1) {
 	}
@@ -121,12 +118,12 @@ end:
 	return 1;
 }
 
-void fill_color(unsigned short horizontal_resolution, unsigned short vertical_resolution, long unsigned int *frame_buffer_base, long unsigned int bg_color)
+void fill_tty_bgcolor(unsigned short horizontal_resolution, unsigned short vertical_resolution, long unsigned int *frame_buffer_base, long unsigned int bg_color)
 {
-	
+
 	unsigned int pixels = horizontal_resolution * vertical_resolution;
 	uint32_t* addr = frame_buffer_base;
-	
+
 	while (pixels--) {
 		*addr++ = bg_color;
 	}
