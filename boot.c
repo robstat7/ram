@@ -115,7 +115,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	write_str("Raam Raam sa. Kernel development is cool. Kernel development.");
 	write_str("My name is Dileep Sankhla.");
 	write_str("My friend's name is Aditya.");
-	write_char('q');
+	write_char('\n');
 	write_char('p');
 	write_str("My laptop is working smoothly atm.");
 

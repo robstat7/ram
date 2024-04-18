@@ -15,7 +15,9 @@ uint32_t tty_bgcolor = 0xffffff; /* white */
 const int tty_page_x_coord = 11; /* tty visible page x coord */
 const int tty_page_y_coord = 11; /* tty visible page y coord */
 const int tty_page_width = 626;
-const int line_separator_space = 2;
+const int line_separator_space = 2; /* in pixels */
+
+const int font_height = 8; /* in pixels */
 
 struct frame_buffer_descriptor frame_buffer;
 
@@ -32,6 +34,13 @@ void write_char(unsigned char c)
 
 	offset = (int) c;
 	offset = offset * 8;
+
+	if((int) c == 10) {	 /* LF */
+		tty_x = tty_page_x_coord;
+		tty_y += font_height + line_separator_space;
+		return;
+	}
+	
 
 	for(cy=0;cy<8;cy++){
 		for(cx=0;cx<8;cx++){
