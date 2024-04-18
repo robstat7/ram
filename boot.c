@@ -121,7 +121,9 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	// write_str("My laptop is working smoothly atm.");
 	//
 	s = "hello";
-	printf("this is %s", s);
+	printf("this is %s\n", s);
+	printf("this is %s!!!\n", s);
+	printf("this is %%", s);
 
 end:
 	/* hang here */

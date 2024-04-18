@@ -10,10 +10,10 @@ void printf(const char *str, char *arg)
 	for(i=0; i<len; i++) {
 		if(str[i]=='%' && (i + 1) < len) {
 			if(str[i + 1] == '%') {
-				i += 2;
+				i++;
 			} else if (str[i + 1] == 's') {
 				write_str(arg);
-				i += 2;
+				i++;
 				continue;
 			}
 		}
