@@ -57,7 +57,7 @@ void write_char(unsigned char c)
 	}
 }	
 
-void write_str(char *str)
+void write_str(const char *str)
 {
 	int i;
 

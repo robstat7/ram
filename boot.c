@@ -29,6 +29,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	UINTN mkey = 0;
 	UINTN dsize = 0;
 	UINT32 dversion;
+	char *s;
 
 
 	InitializeLib(ImageHandle, SystemTable);
@@ -107,17 +108,20 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	tty_out_init(frame_buffer);
 
 	/* test: write characters onto the terminal */
-	for(i = 0; i < 200; i++) {
-		write_char('A');
-		write_char('B');
-	}
+	// for(i = 0; i < 200; i++) {
+	// 	write_char('A');
+	// 	write_char('B');
+	// }
 
-	write_str("Raam Raam sa. Kernel development is cool. Kernel development.");
-	write_str("My name is Dileep Sankhla.");
-	write_str("My friend's name is Aditya.");
-	write_char('\n');
-	write_char('p');
-	write_str("My laptop is working smoothly atm.");
+	// write_str("Raam Raam sa. Kernel development is cool. Kernel development.");
+	// write_str("My name is Dileep Sankhla.");
+	// write_str("My friend's name is Aditya.");
+	// write_char('\n');
+	// write_char('p');
+	// write_str("My laptop is working smoothly atm.");
+	//
+	s = "hello";
+	printf("this is %s", s);
 
 end:
 	/* hang here */
