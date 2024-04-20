@@ -3,7 +3,6 @@
  */
 #include <efi.h>
 #include <efilib.h>
-#include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +19,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	EFI_GUID gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 	EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
 	EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *info;
-	UINTN SizeOfInfo, numModes, nativeMode;
+	UINTN SizeOfInfo, numModes;
 	int i;
 	uint32_t mode;
 	struct frame_buffer_descriptor frame_buffer;
@@ -28,8 +27,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     	UINTN msize = sizeof(mmap);
 	UINTN mkey = 0;
 	UINTN dsize = 0;
-	UINT32 dversion;
-	char *s;
+	char ch;
 
 
 	InitializeLib(ImageHandle, SystemTable);
@@ -47,7 +45,6 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
   	if(EFI_ERROR(status)) {
   		Print(L"error: unable to get native video mode!\n");
   	} else {
-  		nativeMode = gop->Mode->Mode;
   		numModes = gop->Mode->MaxMode;
   	}
 
@@ -113,17 +110,15 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	// 	write_char('B');
 	// }
 
-	// write_str("Raam Raam sa. Kernel development is cool. Kernel development.");
-	// write_str("My name is Dileep Sankhla.");
-	// write_str("My friend's name is Aditya.");
 	// write_char('\n');
 	// write_char('p');
-	// write_str("My laptop is working smoothly atm.");
-	//
-	s = "hello";
-	printf("this is %s\n", s);
-	printf("this is %s!!!\n", s);
-	printf("this is %%", s);
+
+	ch = 'A';
+
+	printk("{c}", ch);	
+	printk("B{c}", ch);	
+	printk("{c}B", ch);	
+	printk("c{c}", ch);	
 
 end:
 	/* hang here */

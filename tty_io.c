@@ -57,14 +57,6 @@ void write_char(unsigned char c)
 	}
 }	
 
-void write_str(const char *str)
-{
-	int i;
-
-	for (i = 0; str[i] != '\0'; i++)
-		write_char(str[i]);
-}
-
 void tty_out_init(struct frame_buffer_descriptor fb) {
 	frame_buffer = fb;
 
