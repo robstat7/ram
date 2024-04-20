@@ -9,8 +9,6 @@
 #include <time.h>
 #include "include/frame_buffer.h"
 
-void fill_tty_bgcolor(unsigned short horizontal_resolution, unsigned short vertical_resolution, long unsigned int *frame_buffer_base, long unsigned int bg_color);
-
 EFI_STATUS
 EFIAPI
 efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
@@ -98,43 +96,15 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	}
 
 
-	/* fill terminal background color with white */
-	fill_tty_bgcolor(frame_buffer.horizontal_resolution, frame_buffer.vertical_resolution, frame_buffer.frame_buffer_base, 0xffffff);
+	/* jump to kernel */
+	main(frame_buffer);
 
-	/* initialize terminal driver */
-	tty_out_init(frame_buffer);
 
-	/* test: write characters onto the terminal */
-	// for(i = 0; i < 200; i++) {
-	// 	write_char('A');
-	// 	write_char('B');
-	// }
-
-	// write_char('\n');
-	// write_char('p');
-
-	ch = 'A';
-
-	printk("{c}", ch);	
-	printk("B{c}", ch);	
-	printk("{c}B", ch);	
-	printk("c{c}", ch);	
-
+	/* should not reach here */
 end:
 	/* hang here */
 	while(1) {
 	}
 
 	return 1;
-}
-
-void fill_tty_bgcolor(unsigned short horizontal_resolution, unsigned short vertical_resolution, long unsigned int *frame_buffer_base, long unsigned int bg_color)
-{
-
-	unsigned int pixels = horizontal_resolution * vertical_resolution;
-	uint32_t* addr = frame_buffer_base;
-
-	while (pixels--) {
-		*addr++ = bg_color;
-	}
 }

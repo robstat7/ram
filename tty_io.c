@@ -64,3 +64,13 @@ void tty_out_init(struct frame_buffer_descriptor fb) {
 	tty_x = tty_page_x_coord;
 	tty_y = tty_page_y_coord;
 }
+
+void fill_tty_bgcolor()
+{
+	unsigned int pixels = frame_buffer.horizontal_resolution * frame_buffer.vertical_resolution;
+	uint32_t* addr = frame_buffer.frame_buffer_base;
+
+	while (pixels--) {
+		*addr++ = tty_bgcolor;
+	}
+}
