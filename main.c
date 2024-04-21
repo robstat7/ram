@@ -35,9 +35,9 @@ void main(struct frame_buffer_descriptor frame_buffer)
 	/* printk("B{c}", ch); */	
 	/* printk("{c}B", ch); */	
 	/* printk("c{c}", ch); */	
-
-	printk("hello,{c}, how are you?", ch);
-
+	/* printk("hello,{c}, how are you?", ch); */
+	
+	printk("Hello world, how is the code going?");
 
 	/* hang here */
 	for(;;) {
