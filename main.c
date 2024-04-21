@@ -10,6 +10,7 @@
 void main(struct frame_buffer_descriptor frame_buffer)
 {
 	char ch;
+	int num;
 
 	/* initialize virtual terminal driver */
 	tty_out_init(frame_buffer);
@@ -29,7 +30,7 @@ void main(struct frame_buffer_descriptor frame_buffer)
 
 
 	/* test printk */	
-	// ch = 'A';
+	ch = 'A';
 
 	/* printk("{c}", ch); */ 
 	/* printk("B{c}", ch); */	
@@ -39,12 +40,22 @@ void main(struct frame_buffer_descriptor frame_buffer)
 	
 	/* printk("Hello world, how is the code going?"); */
 
-	printk("Hello");
-	printk("World");
-	printk("12345");
-	printk("\n");
-	printk("int a = 10;\n");
-	printk("return;\n");
+	// printk("Hello");
+	// printk("World");
+	// printk("12345");
+	// printk("\n");
+	// printk("int a = 10;\n");
+	// printk("return;\n");
+	//
+	
+	num = 52;
+
+	printk("{d}", num);
+	// printk("B{d}", num);
+	// printk("{d}B\n", num);	
+	// printk("B{c}{d}12\n", ch, num);
+	// printk("hello,{d}, how are you?", num);
+
 
 	/* hang here */
 	for(;;) {
