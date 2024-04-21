@@ -31,10 +31,13 @@ void main(struct frame_buffer_descriptor frame_buffer)
 	/* test printk */	
 	ch = 'A';
 
-	printk("{c}", ch);	
-	printk("B{c}", ch);	
-	printk("{c}B", ch);	
-	printk("c{c}", ch);	
+	/* printk("{c}", ch); */ 
+	/* printk("B{c}", ch); */	
+	/* printk("{c}B", ch); */	
+	/* printk("c{c}", ch); */	
+
+	printk("hello,{c}, how are you?", ch);
+
 
 	/* hang here */
 	for(;;) {
