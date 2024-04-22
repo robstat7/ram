@@ -22,10 +22,10 @@ with his inhale and exhale breathing as introduced by His Holiness **Ādi
 **Kaivalya-Jñāna** science. So one can attain ultimate salvation while alive.
 <br/><br/>
 
-### भेद सहित ग्यान घट आवे,  
-### प्रेम भाव नेद्यो मन पावे ।  
-### मोख मिलण की ओई उपाई,  
-### दूजी नहीं सृष्ट मे भाई ॥
+**भेद सहित ग्यान घट आवे,  **
+**प्रेम भाव नेद्यो मन पावे ।  **
+**मोख मिलण की ओई उपाई,  **
+**दूजी नहीं सृष्ट मे भाई ॥**
 <br/>
 
 Meaning: THAT whose nature is true, which is not lacking in all three periods.
