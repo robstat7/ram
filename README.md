@@ -45,7 +45,7 @@ Sumiran-bhajan (chanting) method can be learned from the following video:
 Hackers, hobbyists, enthusiasts, and users knowing the Hindi language can
 visit the following YouTube channels for Satsang (spiritual discourse):
 
-&nbsp;&nbsp;&nbsp;&nbsp;[DR. PAVAN CHANDAK](https://www.youtube.com/@dr.pavanchandak8939)
+&nbsp;&nbsp;&nbsp;&nbsp;[Dr. Pavan Chandak](https://www.youtube.com/@dr.pavanchandak8939)
 
 &nbsp;&nbsp;&nbsp;&nbsp;[Ramdwara Pune - Shanu Pandit](https://www.youtube.com/@ramdwarapune-shanupandit9764)
 <br/><br/>
