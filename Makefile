@@ -1,8 +1,3 @@
-all: backup kernel
-
-backup:
-	mv build/BOOTx64.EFI build/BOOTx64.EFI.old
-
 kernel:
 	gcc -I /usr/include/efi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c boot.c -o build/boot.o -Wall
 	
