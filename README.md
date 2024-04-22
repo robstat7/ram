@@ -25,7 +25,7 @@ with his inhale and exhale breathing as introduced by His Holiness **Ādi
 **भेद सहित ग्यान घट आवे,**  
 **प्रेम भाव नेद्यो मन पावे ।**  
 **मोख मिलण की ओई उपाई,**  
-**दूजी नहीं सृष्ट मे भाई ॥**
+**दूजी नहीं सृष्ट में भाई ॥**
 <br/>
 
 Meaning: THAT whose nature is true, which is not lacking in all three periods.
