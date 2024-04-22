@@ -48,10 +48,10 @@ void main(struct frame_buffer_descriptor frame_buffer)
 	// printk("return;\n");
 	//
 	
-	num = 52;
+	num = 45;
 
-	printk("{d}", num);
-	// printk("B{d}", num);
+	// printk("{d}", num);
+	printk("B{d}", num);
 	// printk("{d}B\n", num);	
 	// printk("B{c}{d}12\n", ch, num);
 	// printk("hello,{d}, how are you?", num);

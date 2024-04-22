@@ -7,7 +7,7 @@ void print_arg(const char *specifier, va_list *ap)
 {
 	char ch;
 	int arg;
-	char *str;
+	char str[60];
 
 		switch(specifier[0]) {
 			case 'c':
@@ -16,9 +16,7 @@ void print_arg(const char *specifier, va_list *ap)
 				break;
 			case 'd':
                                 arg = va_arg(*ap, int);
-				//snprintf(str, INT_MAX - 1, "%d", arg);
-				//sprintf(str, "%d", arg);
-				str = citoa(arg, str);
+				citoa(arg, str);
 				printk(str);
 				break;
 				
