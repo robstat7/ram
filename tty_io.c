@@ -12,9 +12,9 @@ int tty_y;
 uint32_t tty_fgcolor = 0x000000; /* tty text color = black */
 uint32_t tty_bgcolor = 0xffffff; /* white */
 
-const int tty_page_x_coord = 11; /* tty visible page x coord */
-const int tty_page_y_coord = 11; /* tty visible page y coord */
-const int tty_page_width = 626;
+const int tty_page_x_coord = 0; /* tty visible page x coord */
+const int tty_page_y_coord = 0; /* tty visible page y coord */
+const int tty_page_width = 639;
 const int line_separator_space = 2; /* in pixels */
 
 const int font_height = 8; /* in pixels */
