@@ -6,6 +6,11 @@
 #include <stdint.h>
 
 uint64_t *pcie_ecam = NULL;
+uint8_t detected_bus_num = -1;
+uint8_t detected_device_num = -1;
+
+
+void check_all_buses(uint8_t start, uint8_t end);
 
 int nvme_init(char * rsdp)
 {
@@ -53,41 +58,92 @@ int nvme_init(char * rsdp)
 
 	/* enumerate pcie buses */
 	check_all_buses(start_bus_num, end_bus_num);
+
+	if(detected_bus_num != -1 && detected_device_num != -1)
+		printk("found nvme controller. bus num={d}, device num={d}\n", detected_bus_num, detected_device_num);
+	else
+		printk("could not found the nvme controller!\n");
+	
 	printk("@@@pcie scan complete!\n");
 
 	return 0;
 }
 
-uint64_t get_vendor_id(uint8_t bus, uint8_t start, uint8_t device, uint8_t function)
-{
+int find_nvme_controller(uint8_t bus, uint8_t start, uint8_t device, uint8_t function) {
 	uint64_t *phy_addr;
-	uint64_t vendor_id;
+	uint32_t value;
 
 	phy_addr = pcie_ecam + ((bus - start) << 20 | device << 15 | function << 12);
 
-	vendor_id = *phy_addr;
+	phy_addr = (uint64_t *) ((char *) phy_addr + 8);
+
+	value = *((uint32_t *) phy_addr);
+
+	value = value >> 8;
+
+	if(value == 0x10802) /* class code = 0x1, subclass code = 0x8, prog if = 0x2 */
+		return 0;
+	else
+		return 1;
+}
+
+
+int checkFunction(uint8_t bus, uint8_t start, uint8_t device, uint8_t function) {
+	if(find_nvme_controller(bus, start, device, function) == 0) {
+		return 0;
+	} else {
+		return 1;
+	}
+ }
+
+uint16_t get_vendor_id(uint8_t bus, uint8_t start, uint8_t device, uint8_t function)
+{
+	uint64_t *phy_addr;
+	uint64_t value;
+	uint16_t vendor_id;
+
+	phy_addr = pcie_ecam + ((bus - start) << 20 | device << 15 | function << 12);
+
+	value = *phy_addr;
+
+	vendor_id = (uint16_t) value;
 	
 	return vendor_id;
 }
 
-void check_device(uint8_t bus, uint8_t start, uint8_t device)
+int check_device(uint8_t bus, uint8_t start, uint8_t device)
 {
 	uint8_t function = 0;
 	uint16_t vendor_id;
 
-	vendor_id = (uint16_t) get_vendor_id(bus, start, device, function);
+	vendor_id = get_vendor_id(bus, start, device, function);
 	if (vendor_id == 0xFFFF)	/* device doesn't exist */
-		return;
+		return 1;
+
+	return checkFunction(bus, start, device, function);	
 }
 
 void check_all_buses(uint8_t start, uint8_t end)
 {
      uint8_t bus;
-     uint8_t device;
+     uint8_t device;	
+     int found = 0;
 
-     for (bus = start; bus <= end; bus++) {
+     /* note: not checking the bus no. 125 dev no. 24 and the end bus num devs
+      * as they are hanging on reading from the configuration space... */
+     for (bus = start; bus < end; bus++) {
          for (device = 0; device < 32; device++) {
-             check_device(bus, start, device);
-         }
+		if(bus == 125 && device == 24)
+			continue;
+		else if(check_device(bus, start, device) == 0) {
+			found = 1;
+			break;
+	 	}
+        }
+	if(found == 1)
+		break;
      }
+
+     detected_bus_num = bus;
+     detected_device_num = device;
 }
