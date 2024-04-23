@@ -7,10 +7,12 @@ build_and_boot_kernel:
 	
 	gcc -c printk.c -o build/printk.o -Wall
 	
+	gcc -c string.c -o build/string.o -Wall
+
 	gcc -c fonts.c -o build/fonts.o -Wall
 	
 	ld -shared -Bsymbolic -L ../gnu-efi/x86_64/lib/ -L ../gnu-efi/x86_64/gnuefi/ -T /home/dileep/gnu-efi/gnuefi/elf_x86_64_efi.lds \
-		../gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o build/boot.o build/main.o build/tty_io.o build/printk.o build/fonts.o -o build/system.so -lefi -lgnuefi
+		../gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o build/boot.o build/main.o build/tty_io.o build/printk.o build/string.o build/fonts.o -o build/system.so -lefi -lgnuefi
 	
 	objcopy -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 build/system.so build/BOOTx64.EFI
 	
