@@ -28,6 +28,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	EFI_CONFIGURATION_TABLE *config_tables;
 	EFI_GUID Acpi20TableGuid = ACPI_20_TABLE_GUID;	/* EFI GUID for a pointer to the ACPI 2.0 or later specification RSDP structure */
 	char *rsdp_struct;
+	uint64_t *xsdt_address;
 
 	rsdp_struct = NULL;
 	InitializeLib(ImageHandle, SystemTable);
@@ -93,6 +94,14 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		goto end;
 	}
 
+	/* get physical address of the XSDT */
+	xsdt_address = (uint64_t *) *((uint64_t *) (rsdp_struct + 24));
+
+	// /* debugging */
+	// for(i=0;i<4;i++)
+	// 	Print(L"%c", *(((char *) xsdt_address) + i));
+
+	// goto end;
 			
 
 	/* try to exit boot services 3 times */
