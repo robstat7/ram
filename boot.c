@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "include/frame_buffer.h"
 
 EFI_STATUS
@@ -25,19 +24,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     	UINTN msize = sizeof(mmap);
 	UINTN mkey = 0;
 	UINTN dsize = 0;
-	int num_config_tables;
-	EFI_CONFIGURATION_TABLE *config_tables;
-	EFI_GUID Acpi20TableGuid = ACPI_20_TABLE_GUID;	/* EFI GUID for a pointer to the ACPI 2.0 or later specification RSDP structure */
-	char *rsdp_struct;
-	uint64_t *xsdt_address;
-	u_int32_t xsdt_length;
-	int num_entries;
-	uint64_t *desc_header;
-	uint64_t *mcfg;
-	char desc_header_sig[4];
-
-	rsdp_struct = NULL;
-	mcfg = NULL;
+	
 	InitializeLib(ImageHandle, SystemTable);
 
 	/* detecting GOP */
@@ -83,56 +70,12 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		}
 	}
 
-
-	/* locating and storing the pointer to the RSDP structure */	
-	num_config_tables = SystemTable->NumberOfTableEntries;
-
-	config_tables = SystemTable->ConfigurationTable;	
-
-	for(i = 0; i < num_config_tables; i++) {
-		if (CompareGuid(&config_tables[i].VendorGuid, &Acpi20TableGuid) == 0) {
-			rsdp_struct = (char *) config_tables[i].VendorTable;
-			break;
-		}
-	}
-
-	if(rsdp_struct == NULL) {
-		Print(L"error: could not find RSDP structure pointer!\n");
-		goto end;
-	}
-
-	/* get physical address of the XSDT */
-	xsdt_address = (uint64_t *) *((uint64_t *) (rsdp_struct + 24));
-
-	// /* debugging */
-	// for(i=0;i<4;i++)
-	// 	Print(L"%c", *(((char *) xsdt_address) + i));
-
-	// goto end;
-	//
 	
-	xsdt_length = *((uint32_t *) (((char *) xsdt_address) + 4));
-
-	num_entries = (xsdt_length - 36)/8 ;
-
-	for(i = 0; i < num_entries; i++) {
-		desc_header = (uint64_t *) ((uint64_t *) ((char *) xsdt_address + 36))[i];
-		strncpy(desc_header_sig, (char *) desc_header, 4);
-
-		if(strncmp(desc_header_sig, "MCFG", 4) == 0) {
-			mcfg = desc_header;
-			break;
-		}
-	}
-
-	if(mcfg == NULL) {
-		Print(L"error: could not find MCFG table!\n");
+	/* init nvme */
+	if(nvme_init(SystemTable) == 1)
 		goto end;
-	}
-        
 
-	goto end;
-			
+	goto end;	
 
 	/* try to exit boot services 3 times */
   	for (i = 0; i < 3; i++) {
