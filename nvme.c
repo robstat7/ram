@@ -1,51 +1,30 @@
 /*
  * NVMe PCIe driver.
  */
-#include <efi.h>
-#include <efilib.h>
 #include <string.h>
+#include <printk.h>
 #include <stdint.h>
 
-int nvme_init(EFI_SYSTEM_TABLE *SystemTable)
+uint64_t *pcie_ecam = NULL;
+
+int nvme_init(char * rsdp)
 {
 	int i;
-	int num_config_tables;
-	EFI_CONFIGURATION_TABLE *config_tables;
-	EFI_GUID Acpi20TableGuid = ACPI_20_TABLE_GUID;	/* EFI GUID for a pointer to the ACPI 2.0 or later specification RSDP structure */
-	char *rsdp_struct;
 	uint64_t *xsdt_address;
 	uint32_t xsdt_length;
 	int num_entries;
 	uint64_t *desc_header;
 	uint64_t *mcfg;
 	char desc_header_sig[4];
-	uint64_t *ecam_base_addr;
-	int start_bus_num;
-	int end_bus_num;
+	uint8_t start_bus_num;
+	uint8_t end_bus_num;
 
-	ecam_base_addr = NULL;
-	rsdp_struct = NULL;
 	mcfg = NULL;
 
-	/* locating and storing the pointer to the RSDP structure */	
-	num_config_tables = SystemTable->NumberOfTableEntries;
-
-	config_tables = SystemTable->ConfigurationTable;	
-
-	for(i = 0; i < num_config_tables; i++) {
-		if (CompareGuid(&config_tables[i].VendorGuid, &Acpi20TableGuid) == 0) {
-			rsdp_struct = (char *) config_tables[i].VendorTable;
-			break;
-		}
-	}
-
-	if(rsdp_struct == NULL) {
-		Print(L"error: could not find RSDP structure pointer!\n");
-		return 1;
-	}
+	
 
 	/* get physical address of the XSDT */
-	xsdt_address = (uint64_t *) *((uint64_t *) (rsdp_struct + 24));
+	xsdt_address = (uint64_t *) *((uint64_t *) (rsdp + 24));
 
 	xsdt_length = *((uint32_t *) (((char *) xsdt_address) + 4));
 
@@ -63,15 +42,52 @@ int nvme_init(EFI_SYSTEM_TABLE *SystemTable)
 	}
 
 	if(mcfg == NULL) {
-		Print(L"error: could not find MCFG table!\n");
+		printk("error: could not find MCFG table!\n");
 		return 1;
 	}
 
+	/* get and store ECAM base address and starting and ending pcie bus number */
+	pcie_ecam = (uint64_t *) *((uint64_t *) ((char *) mcfg + 44));
+	start_bus_num = (uint8_t) *((char *) mcfg + 44 + 10);
+	end_bus_num = (uint8_t) *((char *) mcfg + 44 + 11);
 
-	/* get ECAM base address and starting and ending pcie bus number */
-	ecam_base_addr = (uint64_t *) *(mcfg + 44);
-	start_bus_num = (int) *((char *) mcfg + 44 + 10);
-	end_bus_num = (int) *((char *) mcfg + 44 + 11);
+	/* enumerate pcie buses */
+	check_all_buses(start_bus_num, end_bus_num);
+	printk("@@@pcie scan complete!\n");
 
 	return 0;
+}
+
+uint64_t get_vendor_id(uint8_t bus, uint8_t start, uint8_t device, uint8_t function)
+{
+	uint64_t *phy_addr;
+	uint64_t vendor_id;
+
+	phy_addr = pcie_ecam + ((bus - start) << 20 | device << 15 | function << 12);
+
+	vendor_id = *phy_addr;
+	
+	return vendor_id;
+}
+
+void check_device(uint8_t bus, uint8_t start, uint8_t device)
+{
+	uint8_t function = 0;
+	uint16_t vendor_id;
+
+	vendor_id = (uint16_t) get_vendor_id(bus, start, device, function);
+	if (vendor_id == 0xFFFF)	/* device doesn't exist */
+		return;
+}
+
+void check_all_buses(uint8_t start, uint8_t end)
+{
+     uint8_t bus;
+     uint8_t device;
+
+     for (bus = start; bus <= end; bus++) {
+         for (device = 0; device < 32; device++) {
+             check_device(bus, start, device);
+         }
+     }
 }
