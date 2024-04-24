@@ -95,7 +95,7 @@ int checkFunction(int16_t bus, int16_t start, uint8_t device, uint8_t function) 
 	}
  }
 
-int16_t get_vendor_id(int16_t bus, int16_t start, uint8_t device, uint8_t function)
+uint16_t get_vendor_id(int16_t bus, int16_t start, uint8_t device, uint8_t function)
 {
 	uint64_t *phy_addr;
 	uint64_t value;
