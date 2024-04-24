@@ -9,7 +9,7 @@ uint64_t *pcie_ecam = NULL;
 int16_t detected_bus_num = -1;
 int16_t detected_device_num = -1;
 
-void check_all_buses(uint8_t start, uint8_t end);
+void check_all_buses(int16_t start, int16_t end);
 
 int nvme_init(char * rsdp)
 {
@@ -20,8 +20,8 @@ int nvme_init(char * rsdp)
 	uint64_t *desc_header;
 	uint64_t *mcfg;
 	char desc_header_sig[4];
-	uint8_t start_bus_num;
-	uint8_t end_bus_num;
+	int16_t start_bus_num;
+	int16_t end_bus_num;
 
 	mcfg = NULL;
 
@@ -52,8 +52,8 @@ int nvme_init(char * rsdp)
 
 	/* get and store ECAM base address and starting and ending pcie bus number */
 	pcie_ecam = (uint64_t *) *((uint64_t *) ((char *) mcfg + 44));
-	start_bus_num = (uint8_t) *((char *) mcfg + 44 + 10);
-	end_bus_num = (uint8_t) *((char *) mcfg + 44 + 11);
+	start_bus_num = (int16_t) *((char *) mcfg + 44 + 10);
+	end_bus_num = (int16_t) *(((char *) mcfg) + 44 + 11);
 
 	/* enumerate pcie buses */
 	check_all_buses(start_bus_num, end_bus_num);
@@ -68,7 +68,7 @@ int nvme_init(char * rsdp)
 	return 0;
 }
 
-int find_nvme_controller(uint8_t bus, uint8_t start, uint8_t device, uint8_t function) {
+int find_nvme_controller(int16_t bus, int16_t start, uint8_t device, uint8_t function) {
 	uint64_t *phy_addr;
 	uint32_t value;
 
@@ -87,7 +87,7 @@ int find_nvme_controller(uint8_t bus, uint8_t start, uint8_t device, uint8_t fun
 }
 
 
-int checkFunction(uint8_t bus, uint8_t start, uint8_t device, uint8_t function) {
+int checkFunction(int16_t bus, int16_t start, uint8_t device, uint8_t function) {
 	if(find_nvme_controller(bus, start, device, function) == 0) {
 		return 0;
 	} else {
@@ -95,7 +95,7 @@ int checkFunction(uint8_t bus, uint8_t start, uint8_t device, uint8_t function) 
 	}
  }
 
-uint16_t get_vendor_id(uint8_t bus, uint8_t start, uint8_t device, uint8_t function)
+int16_t get_vendor_id(int16_t bus, int16_t start, uint8_t device, uint8_t function)
 {
 	uint64_t *phy_addr;
 	uint64_t value;
@@ -110,7 +110,7 @@ uint16_t get_vendor_id(uint8_t bus, uint8_t start, uint8_t device, uint8_t funct
 	return vendor_id;
 }
 
-int check_device(uint8_t bus, uint8_t start, uint8_t device)
+int check_device(int16_t bus, int16_t start, uint8_t device)
 {
 	uint8_t function = 0;
 	uint16_t vendor_id;
@@ -125,16 +125,17 @@ int check_device(uint8_t bus, uint8_t start, uint8_t device)
 	return res;
 }
 
-void check_all_buses(uint8_t start, uint8_t end)
+void check_all_buses(int16_t start, int16_t end)
 {
-     uint8_t bus;
+     int16_t bus;
      uint8_t device;	
-     int found;
+     uint8_t found;
 
      found = 0;
+
      /* note: not checking the bus no. 125 dev no. 24 and the end bus num devs
       * as they are hanging on reading from the configuration space... */
-     for(bus = start; bus < end; bus++) {
+     for(bus = start; bus < 256; bus++) {
          for(device = 0; device < 32; device++) {
 		if(bus == 125 && device == 24)
 			continue;
