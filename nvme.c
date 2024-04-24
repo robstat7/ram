@@ -6,9 +6,8 @@
 #include <stdint.h>
 
 uint64_t *pcie_ecam = NULL;
-uint8_t detected_bus_num = -1;
-uint8_t detected_device_num = -1;
-
+int16_t detected_bus_num = -1;
+int16_t detected_device_num = -1;
 
 void check_all_buses(uint8_t start, uint8_t end);
 
@@ -79,9 +78,9 @@ int find_nvme_controller(uint8_t bus, uint8_t start, uint8_t device, uint8_t fun
 
 	value = *((uint32_t *) phy_addr);
 
-	value = value >> 8;
+	value = value >> 16;
 
-	if(value == 0x10802) /* class code = 0x1, subclass code = 0x8, prog if = 0x2 */
+	if(value == 0x0108) /* class code = 0x1, subclass code = 0x8 */
 		return 0;
 	else
 		return 1;
@@ -115,35 +114,40 @@ int check_device(uint8_t bus, uint8_t start, uint8_t device)
 {
 	uint8_t function = 0;
 	uint16_t vendor_id;
+	int res;
 
 	vendor_id = get_vendor_id(bus, start, device, function);
 	if (vendor_id == 0xFFFF)	/* device doesn't exist */
 		return 1;
 
-	return checkFunction(bus, start, device, function);	
+	res = checkFunction(bus, start, device, function);	
+
+	return res;
 }
 
 void check_all_buses(uint8_t start, uint8_t end)
 {
      uint8_t bus;
      uint8_t device;	
-     int found = 0;
+     int found;
 
+     found = 0;
      /* note: not checking the bus no. 125 dev no. 24 and the end bus num devs
       * as they are hanging on reading from the configuration space... */
-     for (bus = start; bus < end; bus++) {
-         for (device = 0; device < 32; device++) {
+     for(bus = start; bus < end; bus++) {
+         for(device = 0; device < 32; device++) {
 		if(bus == 125 && device == 24)
 			continue;
 		else if(check_device(bus, start, device) == 0) {
+			detected_bus_num = (int16_t) bus;
+		 	detected_device_num = (int16_t) device;
+
 			found = 1;
 			break;
 	 	}
         }
-	if(found == 1)
-		break;
+	if(found == 1) {
+		 break;
+	}
      }
-
-     detected_bus_num = bus;
-     detected_device_num = device;
 }
