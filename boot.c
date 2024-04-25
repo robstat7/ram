@@ -1,7 +1,7 @@
 /*
  * Raam Raam sa _/\_ _/\_ _/\_
  *
- * Boot loader written using gnu-efi.
+ * Boot loader written using gnu-efi
  */
 #include <efi.h>
 #include <efilib.h>
@@ -28,10 +28,13 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	UINTN dsize = 0;
 	int num_config_tables;
 	EFI_CONFIGURATION_TABLE *config_tables;
-	EFI_GUID Acpi20TableGuid = ACPI_20_TABLE_GUID;	/* EFI GUID for a pointer to the ACPI 2.0 or later specification RSDP structure */
-	char *rsdp_struct;
+	EFI_GUID Acpi20TableGuid = ACPI_20_TABLE_GUID;	/* EFI GUID for a pointer to the ACPI 2.0 or later specification XSDP structure */
+	void *table;
+	void *xsdp;
+	uint8_t revision;
 
-	rsdp_struct = NULL;
+	xsdp = NULL;
+	table = NULL;
 	
 
 	InitializeLib(ImageHandle, SystemTable);
@@ -80,20 +83,23 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	}
 
 
-	/* locating and storing the pointer to the RSDP structure */	
+	/* locating and storing the pointer to the XSDP structure */	
 	num_config_tables = SystemTable->NumberOfTableEntries;
 
 	config_tables = SystemTable->ConfigurationTable;	
 
 	for(i = 0; i < num_config_tables; i++) {
 		if (CompareGuid(&config_tables[i].VendorGuid, &Acpi20TableGuid) == 0) {
-			rsdp_struct = (char *) config_tables[i].VendorTable;
-			break;
+			table = config_tables[i].VendorTable;
+			/* check if ACPI version is >= 2.0 */
+			revision = *((uint8_t *) table + 15);
+			if(revision == 0x2)
+				break;
 		}
 	}
 
-	if(rsdp_struct == NULL) {
-		Print(L"error: could not find RSDP structure pointer!\n");
+	if(xsdp == NULL) {
+		Print(L"error: could not find XSDP structure pointer!\n");
 		goto end;
 	}
 
@@ -119,7 +125,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 
 	/* jump to kernel */
-	main(frame_buffer, rsdp_struct);
+	main(frame_buffer, xsdp);
 
 
 	/* should not reach here */
