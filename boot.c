@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include "include/frame_buffer.h"
 
+int8_t validate_xsdp_checksum(void *table);
+
 EFI_STATUS
 EFIAPI
 efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
@@ -91,10 +93,17 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	for(i = 0; i < num_config_tables; i++) {
 		if (CompareGuid(&config_tables[i].VendorGuid, &Acpi20TableGuid) == 0) {
 			table = config_tables[i].VendorTable;
+			/* validate the XSDP */
 			/* check if ACPI version is >= 2.0 */
 			revision = *((uint8_t *) table + 15);
-			if(revision == 0x2)
-				break;
+			if(revision == 0x2) {
+				/* validate checksum */
+				if(validate_xsdp_checksum(table) == 0) {
+					/* store xsdp struct pointer */
+					xsdp = table;
+					break;
+				}
+			}
 		}
 	}
 
@@ -135,4 +144,33 @@ end:
 	}
 
 	return 1;
+}
+
+/*
+ * returns 0 if the checksum is valid.
+ */
+int8_t validate_xsdp_checksum(void *table)
+{
+	uint8_t rsdp_start_offset;
+	uint8_t xsdp_start_offset;
+	uint8_t rsdp_end_offset;
+	uint8_t xsdp_end_offset;
+	int sum;
+	uint8_t i;
+
+	rsdp_start_offset = 0;
+	rsdp_end_offset= 19;
+	xsdp_start_offset = 20;
+	xsdp_end_offset = 35;
+	sum = 0;
+
+	for(i = rsdp_start_offset; i <= rsdp_end_offset; i++)
+		sum += *((int8_t *) table + i);
+
+	if((int8_t) sum == 0) {
+		for(i = xsdp_start_offset; i <= xsdp_end_offset; i++)
+			sum += *((int8_t *) table + i);
+	}
+
+	return (int8_t) sum;
 }
