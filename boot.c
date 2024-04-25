@@ -1,4 +1,6 @@
 /*
+ * Raam Raam sa _/\_ _/\_ _/\_
+ *
  * Boot loader written using gnu-efi.
  */
 #include <efi.h>

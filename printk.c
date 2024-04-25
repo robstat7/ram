@@ -1,12 +1,16 @@
 #include "include/printk.h"
 #include <stdbool.h>
+#include <stdint.h>
 
 char* citoa(int num, char* str);
+void uint64_t_to_hex(uint64_t num, char *str);
 
 void print_arg(const char *specifier, va_list *ap)
 {
 	char ch;
 	int arg;
+	void *addr;
+	uint64_t res;
 	char str[60];
 
 		switch(specifier[0]) {
@@ -19,7 +23,12 @@ void print_arg(const char *specifier, va_list *ap)
 				citoa(arg, str);
 				printk(str);
 				break;
-				
+			case 'p':
+                                addr = va_arg(*ap, void *);
+				res = *((uint64_t *) addr);
+				uint64_t_to_hex(res, str);
+				printk(str);
+				break;
 		}
 }
 
@@ -58,6 +67,12 @@ void printk(const char *format, ...)
 				write_char(current);
 			else
 				specifier = "d";
+			break;
+		case 'p':
+			if (state == NORMAL)
+				write_char(current);
+			else
+				specifier = "p";
 			break;
 		default:
 			write_char(current);
@@ -125,4 +140,43 @@ char* citoa(int num, char* str)
     reverse(str, i);
  
     return str;
+}
+
+void uint64_t_to_hex(uint64_t num, char *str)
+{
+	int i;
+	int temp; 
+	int ch;
+	int r;
+
+	i = 0;
+    
+	if(num == 0) {
+		str[i++] = '0';
+	} else {
+		/* if decimal number is not equal to zero then enter in to the loop and
+		 * execute the statements
+		 */
+		while (num != 0) { 
+        		ch = num / 16; 
+        		r = ch * 16; 
+        		temp = num - r; 
+        	
+			/* convert decimal number in to a hexadecimal number */
+			if(temp < 10) 
+        			temp = temp + 48; 
+        		else
+        			temp = temp + 87; 
+
+        		str[i++] = temp; 
+        		num = num / 16; 
+    		} 
+	}
+
+	str[i++] = 'x';
+	str[i++] = '0';
+	str[i] = '\0';
+
+    	/* reverse the string */
+    	reverse(str, i);
 }
