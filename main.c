@@ -1,13 +1,13 @@
 /*
  * Raam Raam sa _/\_ _/\_ _/\_
  *
- * Kernel main.
+ * Kernel's main function
  */
 #include <efi.h>
 #include <printk.h>
-#include "include/frame_buffer.h"
+#include <fb.h>
 
-void main(struct frame_buffer_descriptor frame_buffer, char *rsdp)
+int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 {
 	/* initialize terminal output */
 	tty_out_init(frame_buffer);
@@ -16,11 +16,13 @@ void main(struct frame_buffer_descriptor frame_buffer, char *rsdp)
 	fill_tty_bgcolor();
 
 	/* init nvme */
-	if(nvme_init(rsdp) == 1)
+	if(nvme_init(xsdp) == 1)
 		goto end;
 
 end:
 	/* hang here */
 	for(;;) {
 	}
+
+	return 1;
 }

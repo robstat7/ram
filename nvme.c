@@ -11,10 +11,10 @@ int16_t detected_device_num = -1;
 
 void check_all_buses(int16_t start, int16_t end);
 
-int nvme_init(char * rsdp)
+int nvme_init(void *xsdp)
 {
 	int i;
-	uint64_t *xsdt_address;
+	uint64_t *xsdt;
 	uint32_t xsdt_length;
 	int num_entries;
 	uint64_t *desc_header;
@@ -25,18 +25,16 @@ int nvme_init(char * rsdp)
 
 	mcfg = NULL;
 
-	
-
 	/* get physical address of the XSDT */
-	xsdt_address = (uint64_t *) *((uint64_t *) (rsdp + 24));
+	xsdt = (uint64_t *) *((uint64_t *) ((char *) xsdp + 24));
 
-	xsdt_length = *((uint32_t *) (((char *) xsdt_address) + 4));
+	xsdt_length = *((uint32_t *) (((char *) xsdt) + 4));
 
 	num_entries = (xsdt_length - 36)/8 ;
 
 	/* find and store MCFG table pointer */
 	for(i = 0; i < num_entries; i++) {
-		desc_header = (uint64_t *) ((uint64_t *) ((char *) xsdt_address + 36))[i];
+		desc_header = (uint64_t *) ((uint64_t *) ((char *) xsdt + 36))[i];
 		strncpy(desc_header_sig, (char *) desc_header, 4);
 
 		if(strncmp(desc_header_sig, "MCFG", 4) == 0) {
@@ -55,15 +53,24 @@ int nvme_init(char * rsdp)
 	start_bus_num = (int16_t) *((char *) mcfg + 44 + 10);
 	end_bus_num = (int16_t) *(((char *) mcfg) + 44 + 11);
 
-	/* enumerate pcie buses */
-	check_all_buses(start_bus_num, end_bus_num);
-
-	if(detected_bus_num != -1 && detected_device_num != -1)
-		printk("found nvme controller. bus num={d}, device num={d}\n", detected_bus_num, detected_device_num);
-	else
-		printk("could not found the nvme controller!\n");
+	printk("@@@pcie_ecam={p}\n", (void *) pcie_ecam);
+	/* enumerate pcie buses to find the nvme controller */
 	
-	printk("@@@pcie scan complete!\n");
+
+
+
+
+
+
+	// /* enumerate pcie buses */
+	// check_all_buses(start_bus_num, end_bus_num);
+
+	// if(detected_bus_num != -1 && detected_device_num != -1)
+	// 	printk("found nvme controller. bus num={d}, device num={d}\n", detected_bus_num, detected_device_num);
+	// else
+	// 	printk("could not found the nvme controller!\n");
+	// 
+	// printk("@@@pcie scan complete!\n");
 
 	return 0;
 }

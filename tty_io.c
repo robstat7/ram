@@ -1,8 +1,8 @@
 /*
  * Terminal driver.
  */
-#include "include/frame_buffer.h"
-#include "include/fonts.h"
+#include <fb.h>
+#include <fonts.h>
 #include <stdint.h>
 
 /* terminal output coordinates */
