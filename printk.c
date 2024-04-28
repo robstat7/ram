@@ -25,7 +25,7 @@ void print_arg(const char *specifier, va_list *ap)
 				break;
 			case 'p':
                                 addr = va_arg(*ap, void *);
-				res = *((uint64_t *) addr);
+				res = (uint64_t) ((uint64_t *) addr);
 				uint64_t_to_hex(res, str);
 				printk(str);
 				break;
