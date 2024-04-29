@@ -10,6 +10,7 @@ uint64_t *pcie_ecam = NULL;
 int16_t detected_bus_num = -1;
 int16_t detected_device_num = -1;
 
+unsigned char check_xsdt_checksum(uint64_t *xsdt, uint32_t xsdt_length);
 uint32_t check_mcfg_checksum(uint64_t *mcfg);
 void check_all_buses(int16_t start, int16_t end);
 
@@ -30,7 +31,13 @@ int nvme_init(void *xsdp)
 	/* get physical address of the XSDT */
 	xsdt = (uint64_t *) *((uint64_t *) ((char *) xsdp + 24));
 
-	xsdt_length = *((uint32_t *) (((char *) xsdt) + 4));
+	xsdt_length = *((uint32_t *) ((unsigned char *) xsdt + 4));
+
+	/* check for valid XSDT checksum */
+	if(check_xsdt_checksum(xsdt, xsdt_length) != 0) {
+		printk("error: invalid xsdt table!\n");
+		return 1;
+	}
 
 	num_entries = (xsdt_length - 36)/8 ;
 
@@ -187,4 +194,21 @@ uint32_t check_mcfg_checksum(uint64_t *mcfg)
 		sum += ((unsigned char *) mcfg)[i];
 
 	return sum & 0xff;
+}
+
+/*
+ * returns 0 if the checksum is valid.
+ */
+unsigned char check_xsdt_checksum(uint64_t *xsdt, uint32_t xsdt_length)
+{
+    unsigned char sum;
+    int i;
+
+    sum = 0;
+
+    for(i = 0; i < xsdt_length; i++) {
+	sum += ((char *) xsdt)[i];
+    }
+
+    return sum;
 }
