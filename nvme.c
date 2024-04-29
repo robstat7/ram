@@ -1,6 +1,7 @@
 /*
  * NVMe PCIe driver.
  */
+#include <stdio.h>
 #include <string.h>
 #include <printk.h>
 #include <stdint.h>
@@ -9,6 +10,7 @@ uint64_t *pcie_ecam = NULL;
 int16_t detected_bus_num = -1;
 int16_t detected_device_num = -1;
 
+uint32_t check_mcfg_checksum(uint64_t *mcfg);
 void check_all_buses(int16_t start, int16_t end);
 
 int nvme_init(void *xsdp)
@@ -35,11 +37,17 @@ int nvme_init(void *xsdp)
 	/* find and store MCFG table pointer */
 	for(i = 0; i < num_entries; i++) {
 		desc_header = (uint64_t *) ((uint64_t *) ((char *) xsdt + 36))[i];
+
 		strncpy(desc_header_sig, (char *) desc_header, 4);
 
+		/* check MCFG table signature */
 		if(strncmp(desc_header_sig, "MCFG", 4) == 0) {
-			mcfg = desc_header;
-			break;
+			/* check for valid MCFG checksum */
+			if(check_mcfg_checksum(desc_header) == 0) {
+				/* This is our MCFG table. Store its pointer */
+				mcfg = desc_header;
+				break;
+			}
 		}
 	}
 
@@ -54,6 +62,8 @@ int nvme_init(void *xsdp)
 	end_bus_num = (int16_t) *(((char *) mcfg) + 44 + 11);
 
 	printk("@@@pcie_ecam={p}\n", (void *) pcie_ecam);
+	printk("@@@start_bus_num={d}\n", start_bus_num);
+	printk("@@@end_bus_num={d}\n", end_bus_num);
 	/* enumerate pcie buses to find the nvme controller */
 	
 
@@ -158,4 +168,23 @@ void check_all_buses(int16_t start, int16_t end)
 		 break;
 	}
      }
+}
+
+/*
+ * returns 0 if the checksum is valid.
+ */
+uint32_t check_mcfg_checksum(uint64_t *mcfg)
+{
+	uint32_t length;
+	uint32_t sum;
+	uint32_t i;
+
+	sum = 0;
+
+	length = *((uint32_t *) ((unsigned char *) mcfg + 4));
+
+	for(i = 0; i < length; i++)
+		sum += ((unsigned char *) mcfg)[i];
+
+	return sum & 0xff;
 }
