@@ -40,14 +40,14 @@ universe. ||
 
 Sumiran-bhajan (chanting) method can be learned from the following video:
 
-&nbsp;&nbsp;&nbsp;&nbsp;[Ramdwara Pune || sumiran-bhajan (chanting) method || Shanu Pandit](https://www.youtube.com/watch?v=WgbibK3yrWg)
+&nbsp;&nbsp;&nbsp;&nbsp;[Raamdwara Pune || Sumiran-bhajan (chanting) method || Shanu Pandit](https://www.youtube.com/watch?v=WgbibK3yrWg)
 
 Hackers, hobbyists, enthusiasts, and users knowing the Hindi language can
 visit the following YouTube channels for satsanga (spiritual discourse):
 
 &nbsp;&nbsp;&nbsp;&nbsp;[Dr. Pavan Chandak](https://www.youtube.com/@dr.pavanchandak8939)
 
-&nbsp;&nbsp;&nbsp;&nbsp;[Ramdwara Pune - Shanu Pandit](https://www.youtube.com/@ramdwarapune-shanupandit9764)
+&nbsp;&nbsp;&nbsp;&nbsp;[Raamdwara Pune - Shanu Pandit](https://www.youtube.com/@ramdwarapune-shanupandit9764)
 <br/><br/>
 
 🙏 🌹 Raam Raam sa 🌹 🙏
