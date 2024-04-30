@@ -23,7 +23,7 @@ with his inhale and exhale breathing as introduced by His Holiness **Ādi
 <br/><br/>
 
 **भेद सहित ग्यान घट आवे,**  
-**प्रेम भाव नेद्यो मन पावे।**
+**प्रेम भाव नेद्यो मन पावे।**  
 **मोख मिलण की ओई उपाई,**  
 **दूजी नहीं सृष्ट में भाई॥**
 <br/>
