@@ -14,14 +14,15 @@ int16_t detected_device_num = -1;
 int16_t detected_function_num = -1;
 uint64_t* nvme_base = NULL;
 int8_t nvme_mjr_num = 0;
-uint8_t nvme_mnr_num = 0, nvme_ter_num = 0;
+uint8_t nvme_mnr_num = 0, nvme_ter_num = 0, nvme_irq = 0;
 
 unsigned char check_xsdt_checksum(uint64_t *xsdt, uint32_t xsdt_length);
 uint32_t check_mcfg_checksum(uint64_t *mcfg);
 void check_all_buses(uint16_t start, uint16_t end);
 int find_nvme_controller(uint16_t bus, uint8_t device, uint8_t function);
 uint64_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function);
-int check_nvme_vs(uint32_t *nvme_base);
+int check_nvme_vs(uint64_t *nvme_base);
+uint8_t get_device_irq_num(uint16_t bus, uint8_t device, uint8_t function);
 
 int nvme_init(void *xsdp)
 {
@@ -97,13 +98,42 @@ int nvme_init(void *xsdp)
 		return 1;
 	}
 
-	printk("@nvme_version={d}.{d}.{d}\n", nvme_mjr_num, nvme_mnr_num, nvme_ter_num);	
+	printk("@nvme version={d}.{d}.{d}\n", nvme_mjr_num, nvme_mnr_num, nvme_ter_num);
+
+	/* Grab the IRQ of the device */
+	nvme_irq = get_device_irq_num(detected_bus_num, detected_device_num, detected_function_num);
+
+	printk("@nvme_irq={d}\n", nvme_irq);
 
 	return 0;
 }
 
+void *get_base_phy_addr(uint16_t bus, uint8_t device, uint8_t function)
+{
+	void *phy_addr;
+
+	phy_addr = (void *) ((uint64_t) pcie_ecam + (((uint32_t) bus) << 20 | ((uint32_t) device) << 15 | ((uint32_t) function) << 12));
+
+	return phy_addr;
+}
+
+
+uint8_t get_device_irq_num(uint16_t bus, uint8_t device, uint8_t function)
+{
+	void *phy_addr;
+	unsigned char value;
+
+	phy_addr = get_base_phy_addr(bus, device, function);
+
+	phy_addr = (void *) ((char *) phy_addr + (15 * 4));	/* device's IRQ number from PCIe Register 15 (IRQ is bits 7-0). Multiplying by 4 because each register consists of 4 bytes */
+
+	value = *((uint8_t *) phy_addr);
+
+	return (uint8_t) value;
+}
+
 /* returns 0 on success else 1 on failure */
-int check_nvme_vs(uint32_t *nvme_base)
+int check_nvme_vs(uint64_t *nvme_base)
 {
 	uint32_t *phy_addr;
 	uint32_t value;
@@ -139,13 +169,14 @@ int check_nvme_vs(uint32_t *nvme_base)
 	return 0;
 }
 
+/* read register 4 for BAR0 */
 uint64_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function) {
 	uint64_t *phy_addr;
 	uint32_t value;
 
 	phy_addr = (uint64_t *) ((uint64_t) pcie_ecam + (((uint32_t) bus) << 20 | ((uint32_t) device) << 15 | ((uint32_t) function) << 12));
 
-	phy_addr = (uint64_t *) ((char *) phy_addr + 16);
+	phy_addr = (uint64_t *) ((char *) phy_addr + (4 * 4));	/* Multiplying by 4 because each register consists of 4 bytes */
 
 	value = *((uint32_t *) phy_addr);
 
