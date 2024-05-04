@@ -9,10 +9,12 @@
 uint64_t *pcie_ecam = NULL;
 int16_t detected_bus_num = -1;
 int16_t detected_device_num = -1;
+int16_t detected_function_num = -1;
 
 unsigned char check_xsdt_checksum(uint64_t *xsdt, uint32_t xsdt_length);
 uint32_t check_mcfg_checksum(uint64_t *mcfg);
 void check_all_buses(uint16_t start, uint16_t end);
+int find_nvme_controller(uint16_t bus, uint8_t device, uint8_t function);
 
 int nvme_init(void *xsdp)
 {
@@ -68,17 +70,15 @@ int nvme_init(void *xsdp)
 	start_bus_num = (uint16_t) *((unsigned char *) mcfg + 44 + 10);
 	end_bus_num = (uint16_t) *(((unsigned char *) mcfg) + 44 + 11);
 
-	printk("@@@pcie_ecam={p}\n", (void *) pcie_ecam);
-	printk("@@@start_bus_num={d}\n", start_bus_num);
-	printk("@@@end_bus_num={d}\n", end_bus_num);
-
 	/* enumerate pcie buses to find the nvme controller */
 	check_all_buses(start_bus_num, end_bus_num);
 
-	if(detected_bus_num != -1 && detected_device_num != -1)
-		printk("found nvme controller. bus num={d}, device num={d}\n", detected_bus_num, detected_device_num);
-	else
-		printk("could not found the nvme controller!\n");
+	if(detected_bus_num != -1 && detected_device_num != -1 && detected_function_num != -1) {
+		printk("found nvme controller! bus num={d}, device num={d}, function num={d}\n", detected_bus_num, detected_device_num, detected_function_num);
+	} else {
+		printk("couldn't found the nvme controller!\n");
+		return 1;
+	}
 	
 	return 0;
 }
@@ -87,7 +87,7 @@ int find_nvme_controller(uint16_t bus, uint8_t device, uint8_t function) {
 	uint64_t *phy_addr;
 	uint32_t value;
 
-	phy_addr = pcie_ecam + (bus << 20 | device << 15 | function << 12);
+	phy_addr = (uint64_t *) ((uint64_t) pcie_ecam + (((uint32_t) bus) << 20 | ((uint32_t) device) << 15 | ((uint32_t) function) << 12));
 
 	phy_addr = (uint64_t *) ((char *) phy_addr + 8);
 
@@ -107,12 +107,10 @@ uint16_t get_vendor_id(uint16_t bus, uint8_t device, uint8_t function)
 	uint64_t value;
 	uint16_t vendor_id;
 
-	phy_addr = pcie_ecam + (bus << 20 | device << 15 | function << 12);
+	phy_addr = (uint64_t *) ((uint64_t) pcie_ecam + (((uint32_t) bus) << 20 | ((uint32_t) device) << 15 | ((uint32_t) function) << 12));
 
-	value = *phy_addr;
+	vendor_id = *((uint16_t *) phy_addr);
 
-	vendor_id = (uint16_t) value;
-	
 	return vendor_id;
 }
 
@@ -148,6 +146,7 @@ void check_all_buses(uint16_t start, uint16_t end)
 		else if(check_device(bus, device) == 0) {
 			detected_bus_num = (int16_t) bus;
 		 	detected_device_num = (int16_t) device;
+			detected_function_num = 0;
 
 			found = 1;
 			break;
