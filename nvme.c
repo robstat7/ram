@@ -6,17 +6,22 @@
 #include <printk.h>
 #include <stdint.h>
 
+#define NVMe_VS		0x8	/* BAR0 Version register's offset */
+
 uint64_t *pcie_ecam = NULL;
 int16_t detected_bus_num = -1;
 int16_t detected_device_num = -1;
 int16_t detected_function_num = -1;
-uint32_t* nvme_base = NULL;
+uint64_t* nvme_base = NULL;
+int8_t nvme_mjr_num = 0;
+uint8_t nvme_mnr_num = 0, nvme_ter_num = 0;
 
 unsigned char check_xsdt_checksum(uint64_t *xsdt, uint32_t xsdt_length);
 uint32_t check_mcfg_checksum(uint64_t *mcfg);
 void check_all_buses(uint16_t start, uint16_t end);
 int find_nvme_controller(uint16_t bus, uint8_t device, uint8_t function);
-uint32_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function);
+uint64_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function);
+int check_nvme_vs(uint32_t *nvme_base);
 
 int nvme_init(void *xsdp)
 {
@@ -76,7 +81,7 @@ int nvme_init(void *xsdp)
 	check_all_buses(start_bus_num, end_bus_num);
 
 	if(detected_bus_num != -1 && detected_device_num != -1 && detected_function_num != -1) {
-		printk("found nvme controller! bus num={d}, device num={d}, function num={d}\n", detected_bus_num, detected_device_num, detected_function_num);
+		printk("found nvme controller! bus num={d}, device num={d}, function num={d}\n\n", detected_bus_num, detected_device_num, detected_function_num);
 	} else {
 		printk("couldn't found the nvme controller!\n");
 		return 1;
@@ -85,12 +90,56 @@ int nvme_init(void *xsdp)
 	/* read register 4 for BAR0 */
 	nvme_base = get_bar0(detected_bus_num, detected_device_num, detected_function_num);
 
-	printk("@nvme_base={p}", (void *) nvme_base);
-	
+	printk("@nvme_base={p}\n", (void *) nvme_base);
+
+	/* check for a valid version number (bits 31:16 should be greater than 0) */
+	if(check_nvme_vs(nvme_base) == 1) {
+		return 1;
+	}
+
+	printk("@nvme_version={d}.{d}.{d}\n", nvme_mjr_num, nvme_mnr_num, nvme_ter_num);	
+
 	return 0;
 }
 
-uint32_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function) {
+/* returns 0 on success else 1 on failure */
+int check_nvme_vs(uint32_t *nvme_base)
+{
+	uint32_t *phy_addr;
+	uint32_t value;
+	int8_t mjr_num = 0, mnr_num, ter_num;
+
+	phy_addr = (uint32_t *) ((char *) nvme_base + NVMe_VS);
+
+	value = *phy_addr;
+
+	__asm__("mov eax, %0\n\t"
+		"ror eax, 16\n\t" /* rotate eax so MJR is bits 15:00 */
+		"mov %1, al"
+		::"m" (value),
+		"m" (mjr_num):);
+
+	if (mjr_num < 1) {
+		printk("error: nvme: invalid major version number!\n");
+		return 1;
+	}
+
+	nvme_mjr_num = mjr_num;	/* store major version num */
+
+	__asm__("rol eax, 8\n\t" /* rotate eax so MNR is bits 07:00 */
+		"mov %0, al\n\t"
+		"rol eax, 8\n\t" /* rotate eax so TER is bits 07:00 */
+		"mov %1, al"
+		::"m" (mnr_num),
+		"m" (ter_num):);
+
+	nvme_mnr_num = mnr_num;	/* store minor and tertiary ver num */
+	nvme_ter_num = ter_num;
+
+	return 0;
+}
+
+uint64_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function) {
 	uint64_t *phy_addr;
 	uint32_t value;
 
@@ -99,8 +148,10 @@ uint32_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function) {
 	phy_addr = (uint64_t *) ((char *) phy_addr + 16);
 
 	value = *((uint32_t *) phy_addr);
+
+	value = value & 0xFFFFFFF0;		/* clear the lowest 4 bits */
 	
-	value = value >> 14;
+	// value = value >> 14;
 
 	return value;
 }
@@ -127,7 +178,6 @@ int find_nvme_controller(uint16_t bus, uint8_t device, uint8_t function) {
 uint16_t get_vendor_id(uint16_t bus, uint8_t device, uint8_t function)
 {
 	uint64_t *phy_addr;
-	uint64_t value;
 	uint16_t vendor_id;
 
 	phy_addr = (uint64_t *) ((uint64_t) pcie_ecam + (((uint32_t) bus) << 20 | ((uint32_t) device) << 15 | ((uint32_t) function) << 12));

@@ -3,7 +3,7 @@ build_and_boot_kernel:
 	
 	gcc -I /usr/include/efi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c main.c -o build/main.o -Wall
 	
-	gcc -I /usr/include/efi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c nvme.c -o build/nvme.o -Wall
+	gcc -masm=intel -I /usr/include/efi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c nvme.c -o build/nvme.o -Wall
 	
 	gcc -I /usr/include/efi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c tty_io.c -o build/tty_io.o -Wall
 	
