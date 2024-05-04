@@ -137,13 +137,9 @@ void check_all_buses(uint16_t start, uint16_t end)
 
      found = 0;
 
-     /* note: not checking the bus no. 125 dev no. 24
-      * as it is hanging on reading from the configuration space... */
      for(bus = start; bus <= end; bus++) {
          for(device = 0; device < 32; device++) {
-		if(bus == 125 && device == 24)
-			continue;
-		else if(check_device(bus, device) == 0) {
+		if(check_device(bus, device) == 0) {
 			detected_bus_num = (int16_t) bus;
 		 	detected_device_num = (int16_t) device;
 			detected_function_num = 0;
