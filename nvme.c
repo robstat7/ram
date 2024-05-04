@@ -10,11 +10,13 @@ uint64_t *pcie_ecam = NULL;
 int16_t detected_bus_num = -1;
 int16_t detected_device_num = -1;
 int16_t detected_function_num = -1;
+uint32_t* nvme_base = NULL;
 
 unsigned char check_xsdt_checksum(uint64_t *xsdt, uint32_t xsdt_length);
 uint32_t check_mcfg_checksum(uint64_t *mcfg);
 void check_all_buses(uint16_t start, uint16_t end);
 int find_nvme_controller(uint16_t bus, uint8_t device, uint8_t function);
+uint32_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function);
 
 int nvme_init(void *xsdp)
 {
@@ -79,9 +81,30 @@ int nvme_init(void *xsdp)
 		printk("couldn't found the nvme controller!\n");
 		return 1;
 	}
+
+	/* read register 4 for BAR0 */
+	nvme_base = get_bar0(detected_bus_num, detected_device_num, detected_function_num);
+
+	printk("@nvme_base={p}", (void *) nvme_base);
 	
 	return 0;
 }
+
+uint32_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function) {
+	uint64_t *phy_addr;
+	uint32_t value;
+
+	phy_addr = (uint64_t *) ((uint64_t) pcie_ecam + (((uint32_t) bus) << 20 | ((uint32_t) device) << 15 | ((uint32_t) function) << 12));
+
+	phy_addr = (uint64_t *) ((char *) phy_addr + 16);
+
+	value = *((uint32_t *) phy_addr);
+	
+	value = value >> 14;
+
+	return value;
+}
+
 
 int find_nvme_controller(uint16_t bus, uint8_t device, uint8_t function) {
 	uint64_t *phy_addr;
