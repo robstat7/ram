@@ -110,6 +110,13 @@ int nvme_init(void *xsdp)
 	/* enable pcie bus mastering */
 	enable_pci_bus_mastering();
 
+	/* continue initialization in assembly code */
+	__asm__("mov rsi, %0\n\t"
+		"call nvme_init_final"
+		::"m" (nvme_base):);
+
+	printk("@returned from nvme_init_final!\n");
+
 	return 0;
 }
 
