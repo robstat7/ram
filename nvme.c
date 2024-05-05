@@ -23,6 +23,8 @@ int find_nvme_controller(uint16_t bus, uint8_t device, uint8_t function);
 uint64_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function);
 int check_nvme_vs(uint64_t *nvme_base);
 uint8_t get_device_irq_num(uint16_t bus, uint8_t device, uint8_t function);
+void *get_base_phy_addr(uint16_t bus, uint8_t device, uint8_t function);
+void enable_pci_bus_mastering(void);
 
 int nvme_init(void *xsdp)
 {
@@ -105,8 +107,33 @@ int nvme_init(void *xsdp)
 
 	printk("@nvme_irq={d}\n", nvme_irq);
 
+	/* enable pcie bus mastering */
+	enable_pci_bus_mastering();
+
 	return 0;
 }
+
+
+void enable_pci_bus_mastering(void)
+{
+	void *phy_addr;
+	int32_t value;
+
+	phy_addr = get_base_phy_addr(detected_bus_num, detected_device_num, detected_function_num);
+
+	phy_addr = (void *) ((char *) phy_addr + (1 * 4));	/* get status/command from pcie device's register #1 */
+
+	value = *((int32_t *) phy_addr);
+
+	__asm__("mov eax, %0\n\t"
+		"bts eax, 2\n\t"
+		"mov %0, eax"
+		::"m" (value):);
+	
+	*((int32_t *) phy_addr) = value;	/* write value to pcie device's register #1 */
+
+}
+
 
 void *get_base_phy_addr(uint16_t bus, uint8_t device, uint8_t function)
 {
