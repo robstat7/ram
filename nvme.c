@@ -13,7 +13,7 @@ int16_t detected_bus_num = -1;
 int16_t detected_device_num = -1;
 int16_t detected_function_num = -1;
 uint64_t* nvme_base = NULL;
-int8_t nvme_mjr_num = 0;
+uint8_t nvme_mjr_num = 0;
 uint8_t nvme_mnr_num = 0, nvme_ter_num = 0, nvme_irq = 0;
 
 unsigned char check_xsdt_checksum(uint64_t *xsdt, uint32_t xsdt_length);
@@ -169,19 +169,21 @@ uint8_t get_device_irq_num(uint16_t bus, uint8_t device, uint8_t function)
 /* returns 0 on success else 1 on failure */
 int check_nvme_vs(uint64_t *nvme_base)
 {
-	uint32_t *phy_addr;
-	uint32_t value;
-	int8_t mjr_num = 0, mnr_num, ter_num;
+	void *phy_addr;
+	uint32_t value, tmp;
+	uint8_t mjr_num = 0, mnr_num, ter_num;
 
-	phy_addr = (uint32_t *) ((char *) nvme_base + NVMe_VS);
+	phy_addr = (void *) ((char *) nvme_base + NVMe_VS);
 
-	value = *phy_addr;
+	value = *((uint32_t *) phy_addr);
 
 	__asm__("mov eax, %0\n\t"
 		"ror eax, 16\n\t" /* rotate eax so MJR is bits 15:00 */
-		"mov %1, al"
+		"mov %1, al\n\t"
+		"mov %2, eax"	  /* copy eax to tmp C variable */
 		::"m" (value),
-		"m" (mjr_num):);
+		"m" (mjr_num),
+		"m" (tmp):);
 
 	if (mjr_num < 1) {
 		printk("error: nvme: invalid major version number!\n");
@@ -190,11 +192,13 @@ int check_nvme_vs(uint64_t *nvme_base)
 
 	nvme_mjr_num = mjr_num;	/* store major version num */
 
-	__asm__("rol eax, 8\n\t" /* rotate eax so MNR is bits 07:00 */
-		"mov %0, al\n\t"
+	__asm__("mov eax, %0\n\t" /* copy tmp c variable value to eax */
+		"rol eax, 8\n\t" /* rotate eax so MNR is bits 07:00 */
+		"mov %1, al\n\t"
 		"rol eax, 8\n\t" /* rotate eax so TER is bits 07:00 */
-		"mov %1, al"
-		::"m" (mnr_num),
+		"mov %2, al"
+		::"m" (tmp),
+		"m" (mnr_num),
 		"m" (ter_num):);
 
 	nvme_mnr_num = mnr_num;	/* store minor and tertiary ver num */
