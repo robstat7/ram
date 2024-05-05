@@ -41,4 +41,8 @@ nvme_init_disabled:
 	; disable controller interrupts
 	mov eax, 0xffffffff		; mask all interrupts
 	mov [rsi+nvme_intms], eax
+	
+	; enable the controller
+	mov eax, 0x00460001		; set iocqes (23:20), iosqes (19:16), and en (0)
+	mov [rsi+nvme_cc], eax		; write the new cc value and enable controller
 	ret
