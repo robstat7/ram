@@ -29,6 +29,21 @@ NVMe_ID_NS	equ 0x00	; Identify Namespace data structure for the specified NSID
 NVMe_ID_CTRL	equ 0x01	; Identify Controller data structure for the controller
 NVMe_ANS	equ 0x02	; Active Namespace ID list
 
+; Memory addresses
+os_SystemVariables	equ 0x0000000000110000	; 0x110000 -> System Variables
+
+; DD - Starting at offset 256, increments by 4
+os_NVMeTotalLBA		equ os_SystemVariables + 0x010C
+
+; DB - Starting at offset 768, increments by 1
+os_NVMeLBA		equ os_SystemVariables + 0x0310
+
+; DW - Starting at offset 512, increments by 2
+os_StorageVar		equ os_SystemVariables + 0x0208	; Bit 0 for NVMe
+
+; DQ - Starting at offset 0, increments by 8
+os_storage_io		equ os_SystemVariables + 0x00B0
+
 ; inputs:
 ; 	rsi = nvme base
 ; outputs:
@@ -104,8 +119,85 @@ nvme_init_enable_wait:
 	mov rdi, os_nvme_NSID		; CDW6-7 DPTR
 	call nvme_admin
 
-nvme_admin:
+	; Parse the Controller Identify data
+	; Serial Number (SN) bytes 23-04
+	; Model Number (MN) bytes 63-24
+	; Firmware Revision (FR) bytes 71-64
+	; Maximum Data Transfer Size (MDTS) byte 77
+	; Controller ID (CNTLID) bytes 79-78
+	mov rsi, os_nvme_CTRLID
+	add rsi, 77
+	lodsb
+	; The value is in units of the minimum memory page size (CAP.MPSMIN) and is reported as a power of two (2^n).
+	; A value of 0h indicates that there is no maximum data transfer size.
+	; NVMe_CAP Memory Page Size Maximum (MPSMAX): bits 55:52 - The maximum memory page size is (2 ^ (12 + MPSMAX))
+	; NVMe_CAP Memory Page Size Minimum (MPSMIN): bits 51:48 - The minimum memory page size is (2 ^ (12 + MPSMIN))
+	; NVMe_CC Memory Page Size (MPS) bits 10:07 - The memory page size is (2 ^ (12 + MPS)). Min 4 KiB, max 128 MiB
+	; TODO verify MPS is set within allowed bounds. CC.EN to 0 before changing
+
+	; TODO move this to it's own function
+	; Parse the Namespace Identify data for drive 0
+	mov rsi, os_nvme_NSID
+	lodsd				; Namespace Size (NSZE) bytes 07-00 - Total LBA blocks
+	mov r8d, os_NVMeTotalLBA
+	; mov [os_NVMeTotalLBA], eax
+	mov [r8d], eax
+
+	; Number of LBA Formats (NLBAF) byte 25
+	; 0 means only one format is supported. Located at bytes 131:128
+	; LBA Data Size (LBADS) is bits 23:16. Needs to be 9 or greater
+	; 9 = 512 byte sectors
+	; 12 = 4096 byte sectors
+
+	mov r8d, os_nvme_NSID+24	
+	mov ecx, [r8d]
+	shr ecx, 16
+	add cl, 1			; NLBAF is a 0-based number
+	mov rsi, os_nvme_NSID+0x80
+	xor ebx, ebx
+nvme_init_LBA_next:
+	cmp cl, 0			; Check # of formats
+	je nvme_init_LBA_end
+	lodsd				; RP (25:24), LBADS (23:16), MS (15:00)
+	shr eax, 16			; AL holds the LBADS
+	mov bl, al			; BL holds the highest LBADS so far
+	cmp al, bl
+	jle nvme_init_LBA_skip
+	mov bl, al			; BL holds the highest LBADS so far
+nvme_init_LBA_skip:
+	dec cl
+	jmp nvme_init_LBA_next
+nvme_init_LBA_end:
+	mov r8d, os_NVMeLBA
+	mov [r8d], bl		; Store the highest LBADS
+
+nvme_init_done:
+	mov r8d, os_StorageVar
+	bts word [r8d], 0	; Set the bit flag that NVMe has been initialized
+	mov rdi, os_storage_io
+	mov rax, nvme_io
+	stosq
+	mov rax, nvme_id
+	stosq
 	ret
 
 nvme_init_error:
+	ret
+
+nvme_admin:
+	ret
+
+nvme_io:
+	ret
+
+;
+; nvme_id -- identify a NVMe device
+; inputs:
+;	rbx = namespace id
+;	rdi = memory location to store data
+; outputs:
+;	nothing
+;	all other registers preserved
+;
+nvme_id:
 	ret
