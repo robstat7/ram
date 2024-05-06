@@ -22,6 +22,7 @@ os_nvme_iocqb		equ 0x0000000000173000	; 0x173000 -> 0x173FFF	4K I/O Completion Q
 os_nvme_iosqb		equ 0x0000000000172000	; 0x172000 -> 0x172FFF	4K I/O Submission Queue Base Address
 os_nvme_CTRLID		equ 0x0000000000174000	; 0x174000 -> 0x174FFF	4K Controller Identify Data
 os_nvme_ANS		equ 0x0000000000175000	; 0x175000 -> 0x175FFF	4K Namespace Data
+os_nvme_NSID		equ 0x0000000000176000	; 0x176000 -> 0x176FFF	4K Namespace Identify Data
 
 ; Command list
 NVMe_ID_NS	equ 0x00	; Identify Namespace data structure for the specified NSID
@@ -93,6 +94,14 @@ nvme_init_enable_wait:
 	mov ecx, NVMe_ANS		; CDW10 CNS
 	xor edx, edx			; CDW11 Ignored
 	mov rdi, os_nvme_ANS		; CDW6-7 DPTR
+	call nvme_admin
+
+	; Save the Identify Namespace data
+	mov eax, 0x00000006		; CDW0 CID 0, PRP used (15:14 clear), FUSE normal (bits 9:8 clear), command Identify (0x06)
+	mov ebx, 1			; CDW1 NSID
+	mov ecx, NVMe_ID_NS		; CDW10 CNS
+	xor edx, edx			; CDW11 Ignored
+	mov rdi, os_nvme_NSID		; CDW6-7 DPTR
 	call nvme_admin
 
 nvme_admin:
