@@ -3,6 +3,8 @@
 ;
 format ELF64
 
+extrn nvme_base
+
 public nvme_init_final
 
 section '.text' executable
@@ -37,6 +39,7 @@ os_NVMeTotalLBA		equ os_SystemVariables + 0x010C
 
 ; DB - Starting at offset 768, increments by 1
 os_NVMeLBA		equ os_SystemVariables + 0x0310
+os_NVMe_atail		equ os_SystemVariables + 0x0311
 
 ; DW - Starting at offset 512, increments by 2
 os_StorageVar		equ os_SystemVariables + 0x0208	; Bit 0 for NVMe
@@ -184,11 +187,101 @@ nvme_init_done:
 nvme_init_error:
 	ret
 
+; nvme_admin -- Perform an Admin operation on a NVMe controller
+; IN:	EAX = CDW0
+;	EBX = CDW1
+;	ECX = CDW10
+;	EDX = CDW11
+;	RDI = CDW6-7
+; OUT:	Nothing
+;	All other registers preserved
 nvme_admin:
-	ret
+	push r9
+	push rdi
+	push rdx
+	push rcx
+	push rbx
+	push rax
+	
+	mov r9, rdi			; Save the memory location
 
+	; Build the command at the expected location in the Submission ring
+	push rax
+	mov rdi, nvme_asqb
+	xor eax, eax
+	push rcx
+	mov rcx, os_NVMe_atail
+	mov al, [rcx]		; Get the current Admin tail value
+	pop rcx
+	shl eax, 6			; Quick multiply by 64
+	add rdi, rax
+	pop rax
+
+	; Build the structure
+	stosd				; CDW0
+	mov eax, ebx
+	stosd				; CDW1
+	xor eax, eax
+	stosd				; CDW2
+	stosd				; CDW3
+	stosq				; CDW4-5
+	mov rax, r9
+	stosq				; CDW6-7
+	xor eax, eax
+	stosq				; CDW8-9
+	mov eax, ecx
+	stosd				; CDW10
+	mov eax, edx
+	stosd				; CDW11
+	xor eax, eax
+	stosd				; CDW12
+	stosd				; CDW13
+	stosd				; CDW14
+	stosd				; CDW15
+
+	; Start the Admin command by updating the tail doorbell
+	mov rdi, [nvme_base]
+	xor eax, eax
+	push rcx
+	mov rcx, os_NVMe_atail
+	mov al, [rcx]		; Get the current Admin tail value
+	pop rcx
+	mov ecx, eax			; Save the old Admin tail value for reading from the completion ring
+	add al, 1			; Add 1 to it
+	cmp al, 64			; Is it 64 or greater?
+	jl nvme_admin_savetail
+	xor eax, eax			; Is so, wrap around to 0
+nvme_admin_savetail:
+	push rcx
+	mov rcx, os_NVMe_atail
+	mov [rcx], al		; Save the tail for the next command
+	pop rcx
+	mov [rdi+0x1000], eax		; Write the new tail value
+
+	; Check completion queue
+	mov rdi, nvme_acqb
+	shl rcx, 4			; Each entry is 16 bytes
+	add rcx, 8			; Add 8 for DW3
+	add rdi, rcx
+nvme_admin_wait:
+	mov rax, [rdi]
+	cmp rax, 0x0
+	; je nvme_admin_wait		; TODO: fix infinite loop
+	xor eax, eax
+	stosq				; Overwrite the old entry
+
+	pop rax
+	pop rbx
+	pop rcx
+	pop rdx
+	pop rdi
+	pop r9
+	ret	
+
+	
 nvme_io:
 	ret
+
 
 ;
 ; nvme_id -- identify a NVMe device
