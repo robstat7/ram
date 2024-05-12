@@ -12,7 +12,7 @@
 int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 {
 	int i;
-	uint32_t msg1, msg2, msg3;
+	uint32_t msg1, msg2, msg3, value;
 	char *gen_intel_msg = "GenuineIntel";
 
 	/* initialize terminal output */
@@ -58,7 +58,22 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 	}
 
 
-	printk("@cpuid: check for GenIntel message passed!\n");
+	printk("@timer: cpuid: check for GenIntel message passed!\n");
+
+	/* detecting x2APIC mode */
+	__asm__("mov eax, 1\n\t"
+		"cpuid\n\t"
+		"mov ebx, 0x200000\n\t"
+		"and ecx, ebx\n\t"
+		"mov %0, ecx"
+		::"m" (value):);
+		
+	if (value == 0x200000) {
+		printk("@timer: cpuid: the processor supports the x2APIC capability!\n");
+	} else if (value == 0x0) {
+		printk("@timer: cpuid: the processor doesn't support the x2APIC capability!\n");
+		goto end;
+	}
 
 
 	/* init nvme */
