@@ -12,7 +12,7 @@
 int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 {
 	int i;
-	uint32_t msg1, msg2, msg3, value;
+	uint32_t msg1, msg2, msg3, value1, value2;
 	char *gen_intel_msg = "GenuineIntel";
 
 	/* initialize terminal output */
@@ -60,20 +60,38 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 
 	printk("@timer: cpuid: check for GenIntel message passed!\n");
 
-	/* detecting x2APIC mode */
-	__asm__("mov eax, 1\n\t"
+	__asm__("mov eax, 0x1\n\t"
 		"cpuid\n\t"
+		"mov eax, 0x10\n\t"
 		"mov ebx, 0x200000\n\t"
+		"and edx, eax\n\t"
 		"and ecx, ebx\n\t"
-		"mov %0, ecx"
-		::"m" (value):);
+		"mov %0, edx\n\t"
+		"mov %1, ecx"
+		::"m" (value1),
+		"m" (value2):);
 		
-	if (value == 0x200000) {
+	/* check whether MSRs are supported */
+	if (value1 == 0x10) {
+		printk("@timer: cpuid: MSRs are supported!\n");
+	} else if (value1 == 0x0) {
+		printk("@timer: cpuid: MSRs aren't supported!\n");
+		goto end;
+	}
+
+
+	/* detecting x2APIC mode */
+	if (value2 == 0x200000) {
 		printk("@timer: cpuid: the processor supports the x2APIC capability!\n");
-	} else if (value == 0x0) {
+	} else if (value2 == 0x0) {
 		printk("@timer: cpuid: the processor doesn't support the x2APIC capability!\n");
 		goto end;
 	}
+
+	// /* enabling x2APIC mode */
+	// __asm__("mov ecx, 0x0\n\t"
+	// 	"mov ecx, 0x1b\n\t"
+	// 	"mov edx, 
 
 
 	/* init nvme */
