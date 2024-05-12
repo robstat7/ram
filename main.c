@@ -88,10 +88,23 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 		goto end;
 	}
 
-	// /* enabling x2APIC mode */
-	// __asm__("mov ecx, 0x0\n\t"
-	// 	"mov ecx, 0x1b\n\t"
-	// 	"mov edx, 
+	/* enabling x2APIC mode */
+	__asm__("mov ecx, 0x0\n\t"
+		"mov ecx, 0x1b\n\t"
+		"rdmsr\n\t"
+		"or eax, 0xc00\n\t"
+		"wrmsr\n\t"
+		"rdmsr\n\t"
+		"and eax, 0xc00\n\t"
+		"mov %0, eax"
+		::"m" (value1):);
+
+	if (value1 == 0xc00) {
+		printk("@timer: init: enabled local APIC in x2APIC mode!\n");
+	} else {
+		printk("@timer: init: unable to enable local APIC in x2APIC mode!\n");
+		goto end;
+	}
 
 
 	/* init nvme */
