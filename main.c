@@ -35,7 +35,7 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 
 	for(i = 0; i < 4; i++) {
 		if(strncmp(gen_intel_msg[i], (char) msg1, 1) !=0) {
-			printk("timer: cpuid: processor is not genuine intel!\n");
+			printk("error: timer: cpuid: processor is not genuine intel!\n");
 			goto end;
 		}
 		msg1 >>= 8;
@@ -43,7 +43,7 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 
 	for(; i < 8; i++) {
 		if(strncmp(gen_intel_msg[i], (char) msg2, 1) !=0) {
-			printk("timer: cpuid: processor is not genuine intel!\n");
+			printk("error: timer: cpuid: processor is not genuine intel!\n");
 			goto end;
 		}
 		msg2 >>= 8;
@@ -51,7 +51,7 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 
 	for(; i < 12; i++) {
 		if(strncmp(gen_intel_msg[i], (char) msg3, 1) !=0) {
-			printk("timer: cpuid: processor is not genuine intel!\n");
+			printk("error: timer: cpuid: processor is not genuine intel!\n");
 			goto end;
 		}
 		msg3 >>= 8;
@@ -79,7 +79,7 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 	if (value1 == 0x10) {
 		printk("@timer: cpuid: MSRs are supported!\n");
 	} else if (value1 == 0x0) {
-		printk("@timer: cpuid: MSRs aren't supported!\n");
+		printk("error: timer: cpuid: MSRs aren't supported!\n");
 		goto end;
 	}
 
@@ -87,7 +87,7 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 	if(value3 == 0x200) {
 		printk("@timer: cpuid: the cpu has a built-in local apic!\n");
 	} else {
-		printk("@timer: cpuid: the cpu either doesn't have a local apic or it has been disabled in MSRs!\n");
+		printk("error: timer: cpuid: either the cpu doesn't have a local apic or it has been disabled in MSRs!\n");
 		goto end;
 	}
 
@@ -95,7 +95,7 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 	if (value2 == 0x200000) {
 		printk("@timer: cpuid: the processor supports the x2APIC capability!\n");
 	} else if (value2 == 0x0) {
-		printk("@timer: cpuid: the processor doesn't support the x2APIC capability!\n");
+		printk("error: timer: cpuid: the processor doesn't support the x2APIC capability!\n");
 		goto end;
 	}
 
@@ -113,7 +113,7 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 	if (value1 == 0xc00) {
 		printk("@timer: init: enabled local APIC in x2APIC mode!\n");
 	} else {
-		printk("@timer: init: unable to enable local APIC in x2APIC mode!\n");
+		printk("error: timer: init: unable to enable local APIC in x2APIC mode!\n");
 		goto end;
 	}
 
