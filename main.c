@@ -12,7 +12,7 @@
 int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 {
 	int i;
-	uint32_t msg1, msg2, msg3, value1, value2;
+	uint32_t msg1, msg2, msg3, value1, value2, value3;
 	char *gen_intel_msg = "GenuineIntel";
 
 	/* initialize terminal output */
@@ -64,12 +64,16 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 		"cpuid\n\t"
 		"mov eax, 0x10\n\t"
 		"mov ebx, 0x200000\n\t"
+		"mov esi, edx\n\t"
+		"and esi, 0x200\n\t"
 		"and edx, eax\n\t"
 		"and ecx, ebx\n\t"
 		"mov %0, edx\n\t"
-		"mov %1, ecx"
+		"mov %1, ecx\n\t"
+		"mov %2, esi"
 		::"m" (value1),
-		"m" (value2):);
+		"m" (value2),
+		"m" (value3):);
 		
 	/* check whether MSRs are supported */
 	if (value1 == 0x10) {
@@ -79,6 +83,13 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 		goto end;
 	}
 
+	/* check whether the CPU has a built-in local APIC and if it hasn't been disabled in MSRs */
+	if(value3 == 0x200) {
+		printk("@timer: cpuid: the cpu has a built-in local apic!\n");
+	} else {
+		printk("@timer: cpuid: the cpu either doesn't have a local apic or it has been disabled in MSRs!\n");
+		goto end;
+	}
 
 	/* detecting x2APIC mode */
 	if (value2 == 0x200000) {
