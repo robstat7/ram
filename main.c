@@ -92,7 +92,7 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 	__asm__("mov ecx, 0x0\n\t"
 		"mov ecx, 0x1b\n\t"
 		"rdmsr\n\t"
-		"or eax, 0xc00\n\t"
+		"or eax, 0x400\n\t"
 		"wrmsr\n\t"
 		"rdmsr\n\t"
 		"and eax, 0xc00\n\t"
