@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fb.h>
+#include "fb.h"
 
 int8_t validate_xsdp_checksum(void *table);
 

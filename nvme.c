@@ -2,8 +2,8 @@
  * NVMe PCIe driver.
  */
 #include <stdio.h>
-#include <string.h>
-#include <printk.h>
+#include "string.h"
+#include "printk.h"
 #include <stdint.h>
 
 #define NVMe_VS		0x8	/* BAR0 Version register's offset */

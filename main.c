@@ -4,10 +4,10 @@
  * Kernel's main function
  */
 #include <efi.h>
-#include <printk.h>
-#include <fb.h>
+#include "printk.h"
+#include "fb.h"
 #include <stdint.h>
-#include <string.h>
+#include "string.h"
 
 int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 {
