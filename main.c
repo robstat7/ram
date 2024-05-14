@@ -17,7 +17,11 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 	/* initialize the timer */
 	if(timer_init() == 1)
 		goto end;
-	
+
+	/* call test timer function */
+	test_timer();
+
+
 	/* init nvme */
 	// if(nvme_init(xsdp) == 1)
 	//	goto end;

@@ -139,3 +139,14 @@ int timer_init(void)
 
 		return 0;
 }
+
+void set_divide_value(int value)
+{
+	__asm__("mov ecx, 0x0\n\t"
+		"mov ecx, 0x83e\n\t"
+		"rdmsr\n\t"
+		"and eax, 0xfffffff4\n\t"
+		"or eax, %0\n\t"
+		"wrmsr"
+		::"m" (value):);
+}
