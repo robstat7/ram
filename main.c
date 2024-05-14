@@ -13,6 +13,7 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 {
 	int i;
 	uint32_t msg1, msg2, msg3, value1, value2, value3;
+	uint16_t cpuid_ax;
 	char *gen_intel_msg = "GenuineIntel";
 
 	/* initialize terminal output */
@@ -134,6 +135,14 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 		printk("error: timer: init: unable to enable the local APIC in x2APIC mode!\n");
 		goto end;
 	}
+
+	/* get the lapic frequency equal to the core crystal's frequency */
+	__asm__("mov eax, 0x16\n\t"
+		"cpuid\n\t"
+		"mov %0, ax"
+		::"m" (cpuid_ax):);
+
+	printk("@timer: cpuid: core base frequency is {d} MHz\n", cpuid_ax);
 
 
 	/* init nvme */
