@@ -151,7 +151,8 @@ void set_divide_value(int value)
 		::"m" (value):);
 }
 
-int set_mode(int mode)
+/* returns 0 on success else 1 */
+int set_mode(uint32_t mode)
 {
 	uint32_t res;
 
@@ -177,4 +178,13 @@ int set_mode(int mode)
 		::"m" (mode):);
 
 	return 0;
+}
+
+void set_initial_count(uint32_t count, uint32_t mode)
+{
+	__asm__("mov ecx, 0x0\n\t"
+		"mov ecx, 0x838\n\t"
+		"mov eax, %0\n\t"
+		"wrmsr"
+		::"m" (count):);
 }
