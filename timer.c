@@ -150,3 +150,31 @@ void set_divide_value(int value)
 		"wrmsr"
 		::"m" (value):);
 }
+
+int set_mode(int mode)
+{
+	uint32_t res;
+
+	__asm__("mov eax, 0x1\n\t"
+		"cpuid\n\t"
+		"and ecx, 0x1000000\n\t"
+		"mov %0, ecx"
+		::"m" (res):);	
+
+	if(res == 0x1000000)
+		printk("@ecx bit 24 is 1!\n");
+	else if(res == 0x0) {
+		printk("@ecx bit 24 is 0! not setting the mode using only the bit 17 at the moment!\n");
+		return 1;
+	}
+
+	__asm__("mov ecx, 0x0\n\t"
+		"mov ecx, 0x832\n\t"
+		"rdmsr\n\t"
+		"and eax, 0xfff9ffff\n\t"
+		"or eax, %0\n\t"
+		"wrmsr"
+		::"m" (mode):);
+
+	return 0;
+}
