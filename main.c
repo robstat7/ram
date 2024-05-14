@@ -99,6 +99,24 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 		goto end;
 	}
 
+	/* enable the local apic */
+	__asm__("mov ecx, 0x0\n\t"
+		"mov ecx, 0x1b\n\t"
+		"rdmsr\n\t"
+		"or eax, 0x800\n\t"
+		"wrmsr\n\t"
+		"rdmsr\n\t"
+		"and eax, 0x800\n\t"
+		"mov %0, eax"
+		::"m" (value1):);
+	
+	if (value1 == 0x800) {
+		printk("@timer: init: enabled the local APIC!\n");
+	} else {
+		printk("error: timer: init: unable to enable the local APIC!\n");
+		goto end;
+	}
+
 	/* enabling x2APIC mode */
 	__asm__("mov ecx, 0x0\n\t"
 		"mov ecx, 0x1b\n\t"
@@ -111,9 +129,9 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 		::"m" (value1):);
 
 	if (value1 == 0xc00) {
-		printk("@timer: init: enabled local APIC in x2APIC mode!\n");
+		printk("@timer: init: enabled the local APIC in x2APIC mode!\n");
 	} else {
-		printk("error: timer: init: unable to enable local APIC in x2APIC mode!\n");
+		printk("error: timer: init: unable to enable the local APIC in x2APIC mode!\n");
 		goto end;
 	}
 
