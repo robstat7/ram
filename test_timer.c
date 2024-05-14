@@ -13,7 +13,7 @@ void test_timer(void)
 
 	/* set mode */
 	/* 0x0 = one-shot, 0x20000= periodic, 0x40000 = tsc-deadline */
-	uint32_t mode = 0x20000; 
+	uint32_t mode = 0x0; 
 
 	if(set_mode(mode) == 0) 
 		printk("test: timer: mode is set to {p}!\n", (void *) mode);
@@ -24,7 +24,7 @@ void test_timer(void)
 
 	/* set initial count */
 	/* assign a value within the unsigned 32-bit int range if the mode is not tsc-deadline */
-	uint64_t initial_cnt = 100;
+	uint64_t initial_cnt = 9999999;
 
 	set_initial_count(initial_cnt);
 
@@ -37,4 +37,9 @@ void test_timer(void)
 		count = read_current_count();
 		printk("test: timer: current count = {d}!\n", count);
 	}
+
+	/* stop the timer */
+	stop_timer();
+
+	printk("test: timer: current count = {d}!\n", read_current_count());
 }

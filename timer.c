@@ -213,6 +213,7 @@ void set_initial_count(uint64_t count)
 	}
 }
 
+/* one-shot or periodic mode */
 uint32_t read_current_count(void)
 {
 	uint32_t count;
@@ -221,7 +222,12 @@ uint32_t read_current_count(void)
 		"mov ecx, 0x839\n\t"
 		"rdmsr\n\t"
 		"mov %0, eax"
-		::"m" (count):);
+		::"m" (count):"ecx", "edx", "eax");
 
 	return count;
+}
+
+void stop_timer(void)
+{
+	set_initial_count(0);
 }
