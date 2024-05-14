@@ -159,7 +159,8 @@ int set_mode(uint32_t mode)
 	__asm__("mov eax, 0x1\n\t"
 		"cpuid\n\t"
 		"and ecx, 0x1000000\n\t"
-		"mov %0, ecx" ::"m" (res):);	
+		"mov %0, ecx"
+		::"m" (res):);	
 
 	if(res == 0x1000000)
 		printk("@timer: set_mode: ecx bit 24 is 1!\n");
@@ -200,14 +201,12 @@ void set_initial_count(uint64_t count)
 			"wrmsr"
 			::"m" (count):);
 	} else if(mode == 0x0 || mode == 0x20000) {	/* one-shot or periodic mode */
-		uint32_t count_32 = (uint32_t) count;
 		printk("@timer: set_initial_count: mode is either one-shot or periodic!\n");
 
-		__asm__("mov ecx, 0x0\n\t"
-			"mov ecx, 0x838\n\t"
-			"mov eax, %0\n\t"
+		__asm__("mov ecx, 0x838\n\t"
+			"mov rax, %0\n\t"	/* count must fit in eax */
 			"wrmsr"
-			::"m" (count_32):);
+			::"m" (count):);
 	}
 }
 
