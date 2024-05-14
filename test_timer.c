@@ -12,18 +12,20 @@ void test_timer(void)
 	printk("test: timer: divide value set to 1!\n");
 
 	/* set mode */
-	/* 0x0 = one-shot, 0x20000= periodic, 0x40000 = tsc_deadline */
-	uint32_t mode = 0x0;
+	/* 0x0 = one-shot, 0x20000= periodic, 0x40000 = tsc-deadline */
+	uint32_t mode = 0x40000;
 
-	if(set_mode(0x20000) == 0) 
+	if(set_mode(mode) == 0) 
 		printk("test: timer: mode set to {p}!\n", (void *) mode);
-	else
+	else {
 		printk("error: test: timer: couldn't set mode to {p}!\n", (void *) mode);
+		return;
+	}
 
 	/* set initial count */
-	uint32_t initial_cnt = 10;
+	uint64_t initial_cnt = 100;
 
-	set_initial_count(initial_cnt, mode);
+	set_initial_count(initial_cnt);
 
 	printk("test: timer: initial count set to {d}!\n", initial_cnt);
 

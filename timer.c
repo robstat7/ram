@@ -159,13 +159,12 @@ int set_mode(uint32_t mode)
 	__asm__("mov eax, 0x1\n\t"
 		"cpuid\n\t"
 		"and ecx, 0x1000000\n\t"
-		"mov %0, ecx"
-		::"m" (res):);	
+		"mov %0, ecx" ::"m" (res):);	
 
 	if(res == 0x1000000)
-		printk("@ecx bit 24 is 1!\n");
+		printk("@timer: set_mode: ecx bit 24 is 1!\n");
 	else if(res == 0x0) {
-		printk("@ecx bit 24 is 0! not setting the mode using only the bit 17 at the moment!\n");
+		printk("@timer: set_mode: ecx bit 24 is 0! not setting the mode using only the bit 17 at the moment!\n");
 		return 1;
 	}
 
@@ -180,13 +179,36 @@ int set_mode(uint32_t mode)
 	return 0;
 }
 
-void set_initial_count(uint32_t count, uint32_t mode)
+void set_initial_count(uint64_t count)
 {
+	uint32_t mode;
+
+	/* get the mode first */
 	__asm__("mov ecx, 0x0\n\t"
-		"mov ecx, 0x838\n\t"
-		"mov eax, %0\n\t"
-		"wrmsr"
-		::"m" (count):);
+		"mov ecx, 0x832\n\t"
+		"rdmsr\n\t"
+		"and eax, 0x60000\n\t"
+		"mov %0, eax"
+		::"m" (mode):);
+
+	if(mode == 0x40000) {	/* tsc-deadline mode */
+		printk("@timer: set_initial_count: mode is tsc-deadline!\n");
+		
+		__asm__("mov ecx, 0x0\n\t"
+			"mov ecx, 0x6e0\n\t"
+			"mov rax, %0\n\t"
+			"wrmsr"
+			::"m" (count):);
+	} else if(mode == 0x0 || mode == 0x20000) {	/* one-shot or periodic mode */
+		uint32_t count_32 = (uint32_t) count;
+		printk("@timer: set_initial_count: mode is either one-shot or periodic!\n");
+
+		__asm__("mov ecx, 0x0\n\t"
+			"mov ecx, 0x838\n\t"
+			"mov eax, %0\n\t"
+			"wrmsr"
+			::"m" (count_32):);
+	}
 }
 
 uint32_t read_current_count(void)
