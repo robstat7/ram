@@ -13,7 +13,7 @@ void test_timer(void)
 
 	/* set mode */
 	/* 0x0 = one-shot, 0x20000= periodic, 0x40000 = tsc-deadline */
-	uint32_t mode = 0x0;
+	uint32_t mode = 0x20000; 
 
 	if(set_mode(mode) == 0) 
 		printk("test: timer: mode is set to {p}!\n", (void *) mode);

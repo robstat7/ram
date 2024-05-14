@@ -190,23 +190,26 @@ void set_initial_count(uint64_t count)
 		"rdmsr\n\t"
 		"and eax, 0x60000\n\t"
 		"mov %0, eax"
-		::"m" (mode):);
+		::"m" (mode):"ecx", "edx", "eax");
 
 	if(mode == 0x40000) {	/* tsc-deadline mode */
 		printk("@timer: set_initial_count: mode is tsc-deadline!\n");
 		
 		__asm__("mov ecx, 0x0\n\t"
 			"mov ecx, 0x6e0\n\t"
-			"mov rax, %0\n\t"
+			"mov rdx, %0\n\t"	/* edx:eax */
+			"mov eax, edx\n\t"
+			"shr rdx, 32\n\t"
 			"wrmsr"
-			::"m" (count):);
+			::"m" (count):"ecx", "rdx", "eax");
 	} else if(mode == 0x0 || mode == 0x20000) {	/* one-shot or periodic mode */
 		printk("@timer: set_initial_count: mode is either one-shot or periodic!\n");
 
 		__asm__("mov ecx, 0x838\n\t"
+			"mov edx, 0x0\n\t"
 			"mov rax, %0\n\t"	/* count must fit in eax */
-			"wrmsr"
-			::"m" (count):);
+			"wrmsr"			
+			::"m" (count):"ecx", "edx", "rax");
 	}
 }
 
