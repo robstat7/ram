@@ -188,3 +188,16 @@ void set_initial_count(uint32_t count, uint32_t mode)
 		"wrmsr"
 		::"m" (count):);
 }
+
+uint32_t read_current_count(void)
+{
+	uint32_t count;
+
+	__asm__("mov ecx, 0x0\n\t"
+		"mov ecx, 0x839\n\t"
+		"rdmsr\n\t"
+		"mov %0, eax"
+		::"m" (count):);
+
+	return count;
+}
