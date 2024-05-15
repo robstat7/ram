@@ -5,6 +5,7 @@
 
 char* citoa(int num, char* str);
 char* citoa_int64_t(int64_t num, char* str);
+char* citoa_uint64_t(uint64_t num, char* str);
 void uint64_t_to_hex(uint64_t num, char *str);
 
 void print_arg(const char *specifier, va_list *ap)
@@ -36,6 +37,11 @@ void print_arg(const char *specifier, va_list *ap)
 				if (strncmp(specifier, "lld", 3) == 0) {	/* int64_t */
 					num = va_arg(*ap, int64_t);
 					citoa_int64_t(num, str);
+					printk(str);
+				}
+				else if (strncmp(specifier, "llu", 3) == 0) {	/* uint64_t */
+					res = va_arg(*ap, uint64_t);
+					citoa_uint64_t(res, str);
 					printk(str);
 				}
 				break;
@@ -100,6 +106,12 @@ void printk(const char *format, ...)
 			else
 				spf_buff[spf++]= 'l';
 			break;
+		case 'u':
+			if (state == NORMAL)
+				write_char(current);
+			else
+				spf_buff[spf]= 'u';
+			break;
 		default:
 			write_char(current);
 			break;
@@ -121,6 +133,38 @@ void reverse(char str[], int length)
         end--;
         start++;
     }
+}
+
+/*
+ * convert uint64_t to string.
+ */
+char* citoa_uint64_t(uint64_t num, char* str)
+{
+    int i = 0;
+    uint64_t base;
+ 
+    base = 10;
+    /* Handle 0 explicitly, otherwise empty string is
+     * printed for 0 */
+    if (num == 0) {
+        str[i++] = '0';
+        str[i] = '\0';
+        return str;
+    }
+ 
+    // Process individual digits
+    while (num != 0) {
+        uint64_t rem = num % base;
+        str[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
+        num = num / base;
+    }
+ 
+    str[i] = '\0'; // Append string terminator
+ 
+    // Reverse the string
+    reverse(str, i);
+ 
+    return str;
 }
 
 /*
