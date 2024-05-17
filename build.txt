@@ -1,8 +1,0 @@
-$ gcc -I /usr/include/efi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c kernel.c -o kernel.o
-$ gcc -I /usr/include/efi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -mgeneral-regs-only -c interrupt_handler.c -o interrupt_handler.o
-$ gcc -I /usr/include/efi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c idt.c -o idt.o
-$ gcc -c isr.S -o isr.o
-$ ld -shared -Bsymbolic -L ../gnu-efi/x86_64/lib -L ../gnu-efi/x86_64/gnuefi -T /home/dileep/gnu-efi/gnuefi/elf_x86_64_efi.lds ../gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o kernel.o interrupt_handler.o idt.o isr.o -o system.so -lgnuefi -lefi
-$ objcopy -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym  -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 system.so BOOTx64.EFI
-$ sudo cp BOOTx64.EFI /media/dileep/738E-58C4/EFI/BOOT/
-$ reboot 
