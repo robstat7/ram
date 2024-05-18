@@ -14,16 +14,19 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 	/* fill terminal background color with white */
 	fill_tty_bgcolor();
 
+	/* initialize gdt */
+	init_gdt();
+
 	/* initialize the timer */
 	if(timer_init() == 1)
 		goto end;
-
-	// /* call test timer function */
-	// test_timer();
-	//
 	
 	/* enable APIC interrupt controller */
 	enable_apic();
+
+
+	// /* call test timer function */
+	// test_timer();
 
 
 	/* init nvme */
