@@ -18,8 +18,12 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 	if(timer_init() == 1)
 		goto end;
 
-	/* call test timer function */
-	test_timer();
+	// /* call test timer function */
+	// test_timer();
+	//
+	
+	/* enable APIC interrupt controller */
+	enable_apic();
 
 
 	/* init nvme */
