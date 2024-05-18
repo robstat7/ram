@@ -3,7 +3,7 @@
  */
 #include "printk.h"
 #include "string.h"
-#include <stdint.h>
+#include "msr_io.h"
 
 /*
  * initialize the timer
@@ -128,6 +128,9 @@ int timer_init(void)
 			printk("error: timer: init: unable to enable the local APIC in x2APIC mode!\n");
 			return 1;
 		}
+
+		/* set interrupt vector number */
+		write_msr_reg(0x832, 0x0);
 	
 		/* get the lapic frequency equal to the core crystal's frequency */
 		__asm__("mov eax, 0x16\n\t"

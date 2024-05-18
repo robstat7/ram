@@ -10,5 +10,5 @@ void write_msr_reg(uint32_t reg_address, uint32_t val)
  		"mov eax, %1\n\t"
  		"wrmsr"
  		::"m" (reg_address),
- 		"m" (val):);
+ 		"m" (val):"ecx", "edx", "eax");
  }
