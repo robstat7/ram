@@ -1,9 +1,10 @@
 ;
-; load gdt
+; load gdt and idt
 ;
 format ELF64
 
 public load_gdt
+public load_idt
 
 section '.text' executable
 
@@ -32,4 +33,8 @@ load_gdt:
 	iretq
 
 .flush:
+	ret
+
+load_idt:
+	lidt [rdi]
 	ret

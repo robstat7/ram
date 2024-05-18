@@ -23,12 +23,12 @@ build_and_boot_kernel:
 	
 	gcc -masm=intel -c msr_io.c -o build/msr_io.o -Wall
 	
-	gcc -c gdt.c -o build/gdt.o -Wall
+	gcc -c descriptor.c -o build/descriptor.o -Wall
 	
 	fasm descriptor_load.asm build/descriptor_load.o
 	
 	ld -shared -Bsymbolic -L ../gnu-efi/x86_64/lib/ -L ../gnu-efi/x86_64/gnuefi/ -T /home/dileep/gnu-efi/gnuefi/elf_x86_64_efi.lds \
-		../gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o build/boot.o build/main.o build/timer.o build/nvme_asm.o build/nvme.o build/tty_io.o build/printk.o build/string.o build/fonts.o build/test_timer.o build/apic.o build/msr_io.o build/gdt.o build/descriptor_load.o -o build/system.so -lefi -lgnuefi
+		../gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o build/boot.o build/main.o build/timer.o build/nvme_asm.o build/nvme.o build/tty_io.o build/printk.o build/string.o build/fonts.o build/test_timer.o build/apic.o build/msr_io.o build/descriptor.o build/descriptor_load.o -o build/system.so -lefi -lgnuefi
 	
 	objcopy -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 build/system.so build/BOOTx64.EFI
 	
