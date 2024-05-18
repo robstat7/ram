@@ -13,7 +13,7 @@
 int timer_init(void)
 {
 	int i;
-	uint32_t msg1, msg2, msg3, value1, value2, value3;
+	uint32_t cpu_edx, cpu_eax, msg1, msg2, msg3, value1, value2, value3;
 	uint16_t cpuid_ax;
 	char *gen_intel_msg = "GenuineIntel";
 
@@ -129,8 +129,21 @@ int timer_init(void)
 			return 1;
 		}
 
-		/* set interrupt vector number */
-		write_msr_reg(0x832, 0x0);
+		/* set interrupt vector number to 0 */
+		read_msr_reg(0x832, &cpu_edx, &cpu_eax);
+
+		printk("@cpu_edx={d}, cpu_eax={d}\n", cpu_edx, cpu_eax);
+
+		cpu_eax &= 0xffffff00;
+
+		printk("@cpu_edx={d}, cpu_eax={d}\n", cpu_edx, cpu_eax);
+
+		write_msr_reg(0x832, &cpu_edx, &cpu_eax);
+
+		// /* mask the timer interrupt */
+		// read_msr_reg(0x832);
+
+		// write_msr_reg(0x832, 0x0);
 	
 		/* get the lapic frequency equal to the core crystal's frequency */
 		__asm__("mov eax, 0x16\n\t"
