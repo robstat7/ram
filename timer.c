@@ -130,10 +130,10 @@ int timer_init(void)
 		}
 
 
-		/* set interrupt vector number to 0 */
+		/* set interrupt vector number to 32 */
 		read_msr_reg(0x832, &cpu_edx, &cpu_eax);
 
-		cpu_eax &= 0xffffff00;
+		cpu_eax &= 0xffffff20;
 
 		write_msr_reg(0x832, &cpu_edx, &cpu_eax);
 
