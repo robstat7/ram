@@ -192,18 +192,7 @@ void set_initial_count(uint64_t count)
 		"mov %0, eax"
 		::"m" (mode):"ecx", "edx", "eax");
 
-	if(mode == 0x40000) {	/* tsc-deadline mode */
-		// printk("@timer: set_initial_count: mode is tsc-deadline!\n");
-		
-		__asm__("mov ecx, 0x0\n\t"
-			"mov ecx, 0x6e0\n\t"
-			"mov rdx, %0\n\t"	/* edx:eax */
-			"mov rax, 0x0\n\t"
-			"mov eax, edx\n\t"
-			"shr rdx, 32\n\t"
-			"wrmsr"
-			::"m" (count):"ecx", "rdx", "rax");
-	} else if(mode == 0x0 || mode == 0x20000) {	/* one-shot or periodic mode */
+	if(mode == 0x0 || mode == 0x20000) {	/* one-shot or periodic mode */
 		printk("@timer: set_initial_count: mode is either one-shot or periodic!\n");
 
 		__asm__("mov ecx, 0x838\n\t"
@@ -226,34 +215,7 @@ uint64_t read_current_count(void)
 		"mov %0, eax"
 		::"m" (mode):"ecx", "edx", "eax");
 
-	if (mode == 0x40000) {				/* tsc-deadline mode */
-		uint64_t rdtsc_val, init_cnt;
-		
-		/* get the initial count */
-		__asm__("mov ecx, 0x6e0\n\t"
-			"rdmsr\n\t"
-			"shl rdx, 32\n\t"	/* create room for eax to be copied into edx */
-			"mov edx, eax\n\t"
-			"mov %0, rdx"
-			::"m" (init_cnt):"ecx", "rdx", "eax");
-
-		/* get the current value of processor's time-stamp counter */
-		__asm__("rdtsc\n\t"
-			"shl rdx, 32\n\t"	/* create room for eax to be copied into edx */
-			"mov edx, eax\n\t"
-			"mov %0, rdx"
-			::"m" (rdtsc_val):"rdx", "eax");
-		
-		printk("@timer: read_current_count: initial count = {llu}\n", init_cnt);
-		printk("@timer: read_current_count: tsc count = {llu}\n", rdtsc_val);
-
-		int64_t diff = init_cnt - rdtsc_val;
-
-		 if (diff > 0)
-		 	return diff;
-		 else
-		 	return 0;
-	} else if(mode == 0x0 || mode == 0x20000) {	/* one-shot or periodic mode */
+	 if(mode == 0x0 || mode == 0x20000) {	/* one-shot or periodic mode */
 		uint32_t count;
 
 		__asm__("mov ecx, 0x0\n\t"
