@@ -20,6 +20,19 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 	/* initialize idt */
 	init_idt();
 
+
+
+//	__asm__ volatile ("mov $60, %eax; mov $0, %edi; syscall "); 
+	
+
+	// int b = 5/0;
+
+	// int * a = NULL;
+	// 
+	// *a = 5;
+
+	
+
 	/* initialize the timer */
 	if(timer_init() == 1)
 		goto end;

@@ -24,7 +24,7 @@ void test_timer(void)
 
 	/* set initial count */
 	/* assign a value within the unsigned 32-bit int range if the mode is not tsc-deadline */
-	uint64_t initial_cnt = 967;
+	uint64_t initial_cnt = 40000;
 
 	set_initial_count(initial_cnt);
 
@@ -33,12 +33,12 @@ void test_timer(void)
 	/* read current count */
 	uint64_t count;
 	
-	for(int i = 0; i < 5; i++) {
+	for(int i = 0; i < 20; i++) {
 		count = read_current_count();
 		printk("test: timer: current count = {llu}!\n", count);
 	}
 
-	/* stop the timer */
+	// /* stop the timer */
 	// stop_timer();
 
 	// printk("test: timer: current count = {llu}!\n", read_current_count());

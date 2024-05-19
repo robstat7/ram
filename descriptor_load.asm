@@ -1,7 +1,7 @@
 ;
 ; load gdt and idt
 ;
-format ELF64
+format elf64
 
 public load_gdt
 public load_idt
