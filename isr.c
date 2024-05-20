@@ -9,7 +9,7 @@ void isr_handler(registers_t regs) {
   //Print(L"I was here %x\n", regs.rbp);
   Print(L"rip=%x\n", regs.rip);
   // Print(L"syscall #%d called!\n", regs.rax);
-  // Print(L"ISR #%d called!\n", regs.rbx);
+  Print(L"ISR #%d called!\n", regs.int_no);
   // for(;;) {}
 }
 

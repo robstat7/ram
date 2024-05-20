@@ -34,6 +34,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	FileName = L"bash";
 
   	InitializeLib(ImageHandle, SystemTable);
+	
 
 	/* set up the GDT */
 	// gdt_install();	
@@ -87,6 +88,12 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	void (*bash)(void) = (void (*)())0x4033e0;
 	Print(L"executing bash ...\n");
+
+	__asm__("push rbp\n\t"
+		"mov rbp, rsp\n\t"
+		"and rsp, 0xfffffffffffffff0"
+		:::);
+
 	bash();
 
 	Print(L"I should not be printed!...\n");
