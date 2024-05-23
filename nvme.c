@@ -159,6 +159,10 @@ void config_admin_queues(void)
 	uint64_t nvme_asqb = 0x0000000000170000; // 0x170000 -> 0x170FFF	4K admin submission queue base address
 	void* addr_asq = (void *) ((uint64_t) nvme_base + nvme_asq);
 
+	int nvme_acq = 0x30; // 8-byte admin completion queue base address
+	uint64_t nvme_acqb = 0x0000000000171000; // 0x171000 -> 0x171FFF	4K admin completion queue base address
+	void* addr_acq = (void *) ((uint64_t) nvme_base + nvme_acq);
+
 	// printk("@value={d}\n", value);
 
 	*((uint32_t *) addr_aqa) = value;
@@ -169,6 +173,11 @@ void config_admin_queues(void)
 	*((uint64_t *) addr_asq) = nvme_asqb;	// ASQB 4K aligned (63:12)
 
 	// printk("@ASQ={llu}\n", *((uint64_t *) addr_asq));
+	
+
+	*((uint64_t *) addr_acq) = nvme_acqb;	// ACQB 4K aligned (63:12)
+						//
+	printk("@ACQ={llu}\n", *((uint64_t *) addr_acq));
 }
 
 void disable_nvme_controller(void)
