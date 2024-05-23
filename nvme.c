@@ -25,6 +25,7 @@ int check_nvme_vs(uint64_t *nvme_base);
 uint8_t get_device_irq_num(uint16_t bus, uint8_t device, uint8_t function);
 void *get_base_phy_addr(uint16_t bus, uint8_t device, uint8_t function);
 void enable_pci_bus_mastering(void);
+void disable_controller_interrupts(void);
 
 int nvme_init(void *xsdp)
 {
@@ -118,6 +119,9 @@ int nvme_init(void *xsdp)
 	config_admin_queues();
 
 
+	/* disable controller interrupts */
+	disable_controller_interrupts();	
+
 
 	// /* continue initialization in assembly code */
 	// __asm__("mov rsi, %0\n\t"
@@ -143,7 +147,18 @@ int nvme_init(void *xsdp)
 
 	// printk("\n");
 
+	printk("done\n");
+
 	return 0;
+}
+
+void disable_controller_interrupts(void)
+{
+	uint32_t val = 0xffffffff;		// mask all interrupts
+	int nvme_intms = 0x0C; // 4-byte interrupt mask set
+	void* addr_intms = (void *) ((uint64_t) nvme_base + nvme_intms);
+
+	*((uint32_t *) addr_intms) = val;
 }
 
 /* 
@@ -177,7 +192,7 @@ void config_admin_queues(void)
 
 	*((uint64_t *) addr_acq) = nvme_acqb;	// ACQB 4K aligned (63:12)
 						//
-	printk("@ACQ={llu}\n", *((uint64_t *) addr_acq));
+	// printk("@ACQ={llu}\n", *((uint64_t *) addr_acq));
 }
 
 void disable_nvme_controller(void)
