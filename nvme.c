@@ -127,6 +127,11 @@ int nvme_init(void *xsdp)
 	enable_nvme_controller();	
 
 
+	if(nvme_init_enable_wait() == 1) {
+		printk("nvme: fatal error! CSTS.CFS (1) is not 0!\n");
+		return 1;
+	}
+
 
 
 	// /* continue initialization in assembly code */
@@ -157,6 +162,25 @@ int nvme_init(void *xsdp)
 
 	return 0;
 }
+
+int nvme_init_enable_wait(void)
+{
+	int nvme_csts =  0x1C; // 4-byte controller status property
+	void* addr = (void *) ((uint64_t) nvme_base + nvme_csts);
+	uint32_t val;
+
+	do{
+		val = *((uint32_t *) addr);
+
+		if((val & 0x2)!= 0x0)	// CSTS.CFS (1) should be 0. If not the controller has had a fatal error
+		{
+			return 1;
+		}
+	}while((val & 0x1) != 0x1);	// Wait for CSTS.RDY (0) to become '1'
+
+	return 0;
+}
+
 void enable_nvme_controller(void)
 {
 	uint32_t val = 0x00460001;		// set iocqes (23:20), iosqes (19:16), and en (0)
@@ -219,8 +243,8 @@ void disable_nvme_controller(void)
 
 	// printk("@value={d}\n", value);
 
-	if(value & 0x1 != 0x0) {		// clear CC.EN bit 0 to '0'
-		value &= 0xfffffffe;
+	if((value & 0x1) != 0x0) {		// clear CC.EN bit 0 to '0'
+		value = (value & 0xfffffffe);
 		*((uint32_t *) addr) = value;
 	}
 
@@ -325,7 +349,7 @@ uint64_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function) {
 
 	value = *((uint32_t *) phy_addr);
 
-	value = value & 0xFFFFFFF0;		/* clear the lowest 4 bits */
+	value = (value & 0xFFFFFFF0);		/* clear the lowest 4 bits */
 	
 	// value = value >> 14;
 
@@ -419,7 +443,7 @@ uint32_t check_mcfg_checksum(uint64_t *mcfg)
 	for(i = 0; i < length; i++)
 		sum += ((unsigned char *) mcfg)[i];
 
-	return sum & 0xff;
+	return (sum & 0xff);
 }
 
 /*
