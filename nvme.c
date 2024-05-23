@@ -114,6 +114,10 @@ int nvme_init(void *xsdp)
 	disable_nvme_controller();	
 
 
+	/* configure AQA, ASQ, and ACQ */
+	config_admin_queues();
+
+
 
 	// /* continue initialization in assembly code */
 	// __asm__("mov rsi, %0\n\t"
@@ -142,6 +146,23 @@ int nvme_init(void *xsdp)
 	return 0;
 }
 
+/* 
+ * configure AQA, ASQ, and ACQ
+ */
+void config_admin_queues(void)
+{
+	int nvme_aqa = 0x24;		// 4-byte Admin Queue Attributes
+	void* addr = (void *) ((uint64_t) nvme_base + nvme_aqa);
+
+	uint32_t value = 0x003f003f;		// 64 commands each for ACQS (27:16) and ASQS (11:00)
+
+	printk("@value={d}\n", value);
+
+	*((uint32_t *) addr) = value;
+
+	printk("@value={d}\n", *((uint32_t *) addr));
+}
+
 void disable_nvme_controller(void)
 {
 	int nvme_cc = 0x14;	// 4-byte controller configuration property
@@ -150,7 +171,7 @@ void disable_nvme_controller(void)
 
 	value = *((uint32_t *) addr);
 
-	printk("@value={d}\n", value);
+	// printk("@value={d}\n", value);
 
 	if(value & 0x1 != 0x0) {		// clear CC.EN bit 0 to '0'
 		value &= 0xfffffffe;
@@ -158,7 +179,7 @@ void disable_nvme_controller(void)
 	}
 
 
-	printk("@value={d}\n", *((uint32_t *) addr));
+	// printk("@value={d}\n", *((uint32_t *) addr));
 }
 
 void enable_pci_bus_mastering(void)
