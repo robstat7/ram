@@ -24,7 +24,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	int i;
 	uint32_t mode;
 	struct frame_buffer_descriptor frame_buffer;
-	uint8_t mmap[4900];
+	uint8_t mmap[8900];
     	UINTN msize = sizeof(mmap);
 	UINTN mkey = 0;
 	UINTN dsize = 0;
