@@ -167,6 +167,15 @@ int nvme_init(void *xsdp)
 	return 0;
 }
 
+void nvme_admin_savetail(int8_t val, uint64_t * nvme_atail)
+{
+	*nvme_atail = val;	// Save the tail for the next command
+
+	*((uint64_t *) nvme_base + 0x1000) = val; // Write the new tail value
+
+	// Check completion queue
+}
+
 /*
  * nvme_admin -- Perform an Admin operation on a nvme controller
  */
@@ -176,7 +185,8 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	uint32_t cdw0_copy = cdw0;
 	uint64_t nvme_asqb = 0x0000000000170000;	// 0x170000 -> 0x170FFF	4K admin submission queue base address
 	uint64_t nvme_atail = SystemVariables + 0x0311;
-	int8_t val;
+	int8_t val, tmp;
+	int64_t val2;
 
 	// Build the command at the expected location in the Submission ring
 	val = *((int8_t *) nvme_atail); // Get the current Admin tail value
@@ -200,6 +210,16 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	*((uint64_t *) nvme_asqb) = 0;	// CDW13
 	*((uint64_t *) nvme_asqb) = 0;	// CDW14
 	*((uint64_t *) nvme_asqb) = 0;	// CDW15
+	
+	// Start the Admin command by updating the tail doorbell
+	val2 = *((uint64_t *) nvme_base);
+	val = *((int8_t *) nvme_atail); // Get the current Admin tail value
+	tmp = val;	// Save the old Admin tail value for reading from the completion ring
+	val++;			// Add 1 to it
+	if(val >= 64)
+		val = 0;
+
+	nvme_admin_savetail(val, &nvme_atail);
 }
 
 void create_io_queues(void)
