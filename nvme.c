@@ -98,6 +98,9 @@ int nvme_init(void *xsdp)
 
 	printk("@nvme_base={p}\n", (void *) nvme_base);
 
+	/* Mark controller memory as un-cacheable */
+	uncacheable_memory();
+
 	/* check for a valid version number (bits 31:16 should be greater than 0) */
 	if(check_nvme_vs(nvme_base) == 1) {
 		return 1;
@@ -172,6 +175,21 @@ int nvme_init(void *xsdp)
 	return 0;
 }
 
+void uncacheable_memory(void)
+{
+	__asm__("mov rax, %0\n\t"
+		"shr rax, 18\n\t"
+		"and al, 0b11111000\n\t"		// Clear the last 3 bits
+		"mov rdi, 0x10000\n\t"		// Base of low PDE
+		"add rdi, rax\n\t"
+		"mov rax, [rdi]\n\t"
+		"btc rax, 3\n\t"			// Clear PWT to disable caching
+		"bts rax, 4\n\t"			// Set PCD to disable caching
+		"mov [rdi], rax"
+		::"m" (nvme_base):"rax","rdi");
+
+}
+
 void nvme_admin_wait(uint64_t acqb_copy)
 {
 	int64_t val;
@@ -184,7 +202,7 @@ void nvme_admin_wait(uint64_t acqb_copy)
 	*((uint64_t *) acqb_copy) = 0; // Overwrite the old entry
 }	
 
-void nvme_admin_savetail(int8_t val, uint64_t * nvme_atail, int32_t old_tail_val)
+void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_val)
 {
 	*nvme_atail = val;	// Save the tail for the next command
 	uint64_t acqb_copy = nvme_acqb;
@@ -209,12 +227,12 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	uint32_t cdw0_copy = cdw0;
 	uint64_t nvme_asqb = 0x0000000000170000;	// 0x170000 -> 0x170FFF	4K admin submission queue base address
 	uint64_t nvme_atail = SystemVariables + 0x0311;
-	int8_t val;
-	int32_t tmp;
+	uint8_t val;
+	uint32_t tmp;
 	int64_t val2;
 
 	// Build the command at the expected location in the Submission ring
-	val = *((int8_t *) nvme_atail); // Get the current Admin tail value
+	val = *((uint8_t *) nvme_atail); // Get the current Admin tail value
 	
 	printk("@atail={d}\n", val);
 
@@ -238,7 +256,7 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	
 	// Start the Admin command by updating the tail doorbell
 	val2 = *((int64_t *) nvme_base);
-	val = *((int8_t *) nvme_atail); // Get the current Admin tail value
+	val = *((uint8_t *) nvme_atail); // Get the current Admin tail value
 	tmp = val;	// Save the old Admin tail value for reading from the completion ring
 	val++;			// Add 1 to it
 	
