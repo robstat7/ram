@@ -192,7 +192,7 @@ void uncacheable_memory(void)
 
 void nvme_admin_wait(uint64_t acqb_copy)
 {
-	int64_t val;
+	uint64_t val;
 
 	do{
 		val = *((uint64_t *) acqb_copy);
@@ -202,15 +202,17 @@ void nvme_admin_wait(uint64_t acqb_copy)
 	*((uint64_t *) acqb_copy) = 0; // Overwrite the old entry
 }	
 
-void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_val)
+void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_val, int64_t val2)
 {
-	*nvme_atail = val;	// Save the tail for the next command
+	uint32_t val_new = val;
 	uint64_t acqb_copy = nvme_acqb;
 
-	*((uint64_t *) nvme_base + 0x1000) = val; // Write the new tail value
+	*((unsigned char *) nvme_atail) = val;	// Save the tail for the next command
+
+	*((uint32_t *) val2 + 0x1000) = val_new; // Write the new tail value
 
 	// Check completion queue
-	old_tail_val <<= 4;	// Each entry is 16 bytes
+	old_tail_val = (old_tail_val << 4);	// Each entry is 16 bytes
 	old_tail_val += 8;	// Add 8 for DW3
 	acqb_copy += old_tail_val;
 	
@@ -240,19 +242,19 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	nvme_asqb = nvme_asqb + val;
 
 	// Build the structure
-	*((uint64_t *) nvme_asqb) = cdw0;	// CDW0
-	*((uint64_t *) nvme_asqb) = cdw1;	// CDW1
-	*((uint64_t *) nvme_asqb) = 0;	// CDW2
-	*((uint64_t *) nvme_asqb) = 0;	// CDW3
+	*((uint32_t *) nvme_asqb) = cdw0;	// CDW0
+	*((uint32_t *) nvme_asqb) = cdw1;	// CDW1
+	*((uint32_t *) nvme_asqb) = 0;	// CDW2
+	*((uint32_t *) nvme_asqb) = 0;	// CDW3
 	*((uint64_t *) nvme_asqb) = 0;	// CDW4-5
 	*((uint64_t *) nvme_asqb) = cdw6_7;	// CDW6-7
 	*((uint64_t *) nvme_asqb) = 0;	// CDW8-9
-	*((uint64_t *) nvme_asqb) = cdw10;	// CDW10
-	*((uint64_t *) nvme_asqb) = cdw11;	// CDW11
-	*((uint64_t *) nvme_asqb) = 0;	// CDW12
-	*((uint64_t *) nvme_asqb) = 0;	// CDW13
-	*((uint64_t *) nvme_asqb) = 0;	// CDW14
-	*((uint64_t *) nvme_asqb) = 0;	// CDW15
+	*((uint32_t *) nvme_asqb) = cdw10;	// CDW10
+	*((uint32_t *) nvme_asqb) = cdw11;	// CDW11
+	*((uint32_t *) nvme_asqb) = 0;	// CDW12
+	*((uint32_t *) nvme_asqb) = 0;	// CDW13
+	*((uint32_t *) nvme_asqb) = 0;	// CDW14
+	*((uint32_t *) nvme_asqb) = 0;	// CDW15
 	
 	// Start the Admin command by updating the tail doorbell
 	val2 = *((int64_t *) nvme_base);
@@ -265,7 +267,7 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	if(val >= 64)
 		val = 0;
 
-	nvme_admin_savetail(val, &nvme_atail, tmp);
+	nvme_admin_savetail(val, &nvme_atail, tmp, val2);
 }
 
 void save_identify_struct(void)
@@ -324,6 +326,8 @@ void enable_nvme_controller(void)
 	void* addr = (void *) ((uint64_t) nvme_base + nvme_cc);
 
 	*((uint32_t *) addr) = val;	// write the new cc value and enable controller
+	
+	printk("@cc={d}\n", *((uint32_t *) addr));
 }
 
 void disable_controller_interrupts(void)
