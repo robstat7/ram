@@ -110,16 +110,56 @@ int nvme_init(void *xsdp)
 	/* enable pcie bus mastering */
 	enable_pci_bus_mastering();
 
-	/* continue initialization in assembly code */
-	__asm__("mov rsi, %0\n\t"
-		"call nvme_init_final"
-		::"m" (nvme_base):);
+	/* disable the controller if it's enabled */
+	disable_nvme_controller();	
 
-	printk("@returned from nvme_init_final!\n");
+
+
+	// /* continue initialization in assembly code */
+	// __asm__("mov rsi, %0\n\t"
+	// 	"call nvme_init_final"
+	// 	::"m" (nvme_base):);
+
+	// printk("nvme: controller is initialized!\n");
+
+	// char data[512];
+	// /* test: read a text file and it should print- Hello World! */
+	// __asm__("mov rax, 421914624\n\t"
+	// 	"mov rbx, 2\n\t"
+	// 	"mov rcx, 1\n\t"
+	// 	"mov rdx, 0\n\t"
+	// 	"mov rdi, %0\n\t"
+	// 	"call nvme_io"
+	// 	::"m" (data):);
+
+	// printk("nvme: done reading data! Output=\n");
+
+	// for (i = 0; i < 13; i++)
+	// 	printk("{c}", data[i]);
+
+	// printk("\n");
 
 	return 0;
 }
 
+void disable_nvme_controller(void)
+{
+	int nvme_cc = 0x14;	// 4-byte controller configuration property
+	void* addr = (void *) ((uint64_t) nvme_base + nvme_cc);
+	uint32_t value;
+
+	value = *((uint32_t *) addr);
+
+	printk("@value={d}\n", value);
+
+	if(value & 0x1 != 0x0) {		// clear CC.EN bit 0 to '0'
+		value &= 0xfffffffe;
+		*((uint32_t *) addr) = value;
+	}
+
+
+	printk("@value={d}\n", *((uint32_t *) addr));
+}
 
 void enable_pci_bus_mastering(void)
 {

@@ -140,8 +140,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	/* should not reach here */
 end:
 	/* hang here */
-	while(1) {
-	}
+	for(;;);
 
 	return 1;
 }
