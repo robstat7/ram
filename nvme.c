@@ -15,6 +15,7 @@ int16_t detected_function_num = -1;
 uint64_t* nvme_base = NULL;
 uint8_t nvme_mjr_num = 0;
 uint8_t nvme_mnr_num = 0, nvme_ter_num = 0, nvme_irq = 0;
+uint32_t SystemVariables	= 0x0000000000110000; // 0x110000 -> System Variables
 
 unsigned char check_xsdt_checksum(uint64_t *xsdt, uint32_t xsdt_length);
 uint32_t check_mcfg_checksum(uint64_t *mcfg);
@@ -133,6 +134,9 @@ int nvme_init(void *xsdp)
 	}
 
 
+	/* create IO queues */
+	create_io_queues();
+
 
 	// /* continue initialization in assembly code */
 	// __asm__("mov rsi, %0\n\t"
@@ -161,6 +165,53 @@ int nvme_init(void *xsdp)
 	printk("done\n");
 
 	return 0;
+}
+
+/*
+ * nvme_admin -- Perform an Admin operation on a nvme controller
+ */
+void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, uint64_t cdw6_7)
+{
+	uint64_t cdw6_7_copy = cdw6_7;
+	uint32_t cdw0_copy = cdw0;
+	uint64_t nvme_asqb = 0x0000000000170000;	// 0x170000 -> 0x170FFF	4K admin submission queue base address
+	uint64_t nvme_atail = SystemVariables + 0x0311;
+	int8_t val;
+
+	// Build the command at the expected location in the Submission ring
+	val = *((int8_t *) nvme_atail); // Get the current Admin tail value
+	
+	printk("@atail={d}\n", val);
+
+	val = (val << 6);			// Quick multiply by 64
+	nvme_asqb = nvme_asqb + val;
+
+	// Build the structure
+	*((uint64_t *) nvme_asqb) = cdw0;	// CDW0
+	*((uint64_t *) nvme_asqb) = cdw1;	// CDW1
+	*((uint64_t *) nvme_asqb) = 0;	// CDW2
+	*((uint64_t *) nvme_asqb) = 0;	// CDW3
+	*((uint64_t *) nvme_asqb) = 0;	// CDW4-5
+	*((uint64_t *) nvme_asqb) = cdw6_7;	// CDW6-7
+	*((uint64_t *) nvme_asqb) = 0;	// CDW8-9
+	*((uint64_t *) nvme_asqb) = cdw10;	// CDW10
+	*((uint64_t *) nvme_asqb) = cdw11;	// CDW11
+	*((uint64_t *) nvme_asqb) = 0;	// CDW12
+	*((uint64_t *) nvme_asqb) = 0;	// CDW13
+	*((uint64_t *) nvme_asqb) = 0;	// CDW14
+	*((uint64_t *) nvme_asqb) = 0;	// CDW15
+}
+
+void create_io_queues(void)
+{	
+	uint32_t val1 = 0x00010005;	// CDW0 CID (31:16), PRP used (15:14 clear), FUSE normal (bits 9:8 clear), command Create I/O Completion Queue (0x05)
+	uint32_t val2 = 0; 	// CDW1 Ignored
+	uint32_t val3 = 0x003F0001;		// CDW10 QSIZE 64 entries (31:16), QID 1 (15:0)
+	uint32_t val4= 0x00000001;		// CDW11 PC Enabled (0)
+	uint64_t nvme_iocqb = 0x0000000000173000;			// CDW6-7 DPTR. 0x173000 -> 0x173FFF	4K I/O Completion Queue Base Address
+
+	// Create I/O Completion Queue
+	nvme_admin(val1, val2, val3, val4, nvme_iocqb);
 }
 
 int nvme_init_enable_wait(void)
