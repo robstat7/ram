@@ -123,6 +123,12 @@ int nvme_init(void *xsdp)
 	disable_controller_interrupts();	
 
 
+	// enable the controller
+	enable_nvme_controller();	
+
+
+
+
 	// /* continue initialization in assembly code */
 	// __asm__("mov rsi, %0\n\t"
 	// 	"call nvme_init_final"
@@ -150,6 +156,14 @@ int nvme_init(void *xsdp)
 	printk("done\n");
 
 	return 0;
+}
+void enable_nvme_controller(void)
+{
+	uint32_t val = 0x00460001;		// set iocqes (23:20), iosqes (19:16), and en (0)
+	int nvme_cc = 0x14;	// 4-byte controller configuration property
+	void* addr = (void *) ((uint64_t) nvme_base + nvme_cc);
+
+	*((uint32_t *) addr) = val;	// write the new cc value and enable controller
 }
 
 void disable_controller_interrupts(void)
