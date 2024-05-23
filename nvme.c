@@ -152,15 +152,23 @@ int nvme_init(void *xsdp)
 void config_admin_queues(void)
 {
 	int nvme_aqa = 0x24;		// 4-byte Admin Queue Attributes
-	void* addr = (void *) ((uint64_t) nvme_base + nvme_aqa);
-
+	void* addr_aqa = (void *) ((uint64_t) nvme_base + nvme_aqa);
 	uint32_t value = 0x003f003f;		// 64 commands each for ACQS (27:16) and ASQS (11:00)
 
-	printk("@value={d}\n", value);
+	int nvme_asq = 0x28;	// 8-byte admin submission queue base address
+	uint64_t nvme_asqb = 0x0000000000170000; // 0x170000 -> 0x170FFF	4K admin submission queue base address
+	void* addr_asq = (void *) ((uint64_t) nvme_base + nvme_asq);
 
-	*((uint32_t *) addr) = value;
+	// printk("@value={d}\n", value);
 
-	printk("@value={d}\n", *((uint32_t *) addr));
+	*((uint32_t *) addr_aqa) = value;
+
+	// printk("@value={d}\n", *((uint32_t *) addr_aqa));
+
+
+	*((uint64_t *) addr_asq) = nvme_asqb;	// ASQB 4K aligned (63:12)
+
+	// printk("@ASQ={llu}\n", *((uint64_t *) addr_asq));
 }
 
 void disable_nvme_controller(void)
