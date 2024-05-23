@@ -16,6 +16,7 @@ uint64_t* nvme_base = NULL;
 uint8_t nvme_mjr_num = 0;
 uint8_t nvme_mnr_num = 0, nvme_ter_num = 0, nvme_irq = 0;
 uint32_t SystemVariables	= 0x0000000000110000; // 0x110000 -> System Variables
+uint64_t nvme_acqb = 0x0000000000171000; // 0x171000 -> 0x171FFF	4K admin completion queue base address
 
 unsigned char check_xsdt_checksum(uint64_t *xsdt, uint32_t xsdt_length);
 uint32_t check_mcfg_checksum(uint64_t *mcfg);
@@ -167,13 +168,32 @@ int nvme_init(void *xsdp)
 	return 0;
 }
 
-void nvme_admin_savetail(int8_t val, uint64_t * nvme_atail)
+void nvme_admin_wait(uint64_t acqb_copy)
+{
+	int64_t val;
+
+	do{
+		val = *((uint64_t *) acqb_copy);
+		//printk("@val={lld}\n", val);
+	}while(val == 0);
+
+	*((uint64_t *) acqb_copy) = 0; // Overwrite the old entry
+}	
+
+void nvme_admin_savetail(int8_t val, uint64_t * nvme_atail, int32_t old_tail_val)
 {
 	*nvme_atail = val;	// Save the tail for the next command
+	uint64_t acqb_copy = nvme_acqb;
 
 	*((uint64_t *) nvme_base + 0x1000) = val; // Write the new tail value
 
 	// Check completion queue
+	old_tail_val <<= 4;	// Each entry is 16 bytes
+	old_tail_val += 8;	// Add 8 for DW3
+	acqb_copy += old_tail_val;
+	
+	/* skipping for now */
+	// nvme_admin_wait(acqb_copy);
 }
 
 /*
@@ -185,7 +205,8 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	uint32_t cdw0_copy = cdw0;
 	uint64_t nvme_asqb = 0x0000000000170000;	// 0x170000 -> 0x170FFF	4K admin submission queue base address
 	uint64_t nvme_atail = SystemVariables + 0x0311;
-	int8_t val, tmp;
+	int8_t val;
+	int32_t tmp;
 	int64_t val2;
 
 	// Build the command at the expected location in the Submission ring
@@ -212,14 +233,17 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	*((uint64_t *) nvme_asqb) = 0;	// CDW15
 	
 	// Start the Admin command by updating the tail doorbell
-	val2 = *((uint64_t *) nvme_base);
+	val2 = *((int64_t *) nvme_base);
 	val = *((int8_t *) nvme_atail); // Get the current Admin tail value
 	tmp = val;	// Save the old Admin tail value for reading from the completion ring
 	val++;			// Add 1 to it
+	
+	printk("@val={d}\n", val);
+
 	if(val >= 64)
 		val = 0;
 
-	nvme_admin_savetail(val, &nvme_atail);
+	nvme_admin_savetail(val, &nvme_atail, tmp);
 }
 
 void create_io_queues(void)
@@ -232,6 +256,14 @@ void create_io_queues(void)
 
 	// Create I/O Completion Queue
 	nvme_admin(val1, val2, val3, val4, nvme_iocqb);
+
+	// Create I/O Submission Queue
+	val1 = 0x00010001;	// CDW0 CID (31:16), PRP used (15:14 clear), FUSE normal (bits 9:8 clear), command Create I/O Submission Queue (0x01)
+	val3 = 0x003F0001;		// CDW10 QSIZE 64 entries (31:16), QID 1 (15:0)
+	val4 = 0x00010001;		// CDW11 CQID 1 (31:16), PC Enabled (0)
+	uint64_t nvme_iosqb =  0x0000000000172000;	// CDW6-7 DPTR. 0x172000 -> 0x172FFF	4K I/O Submission Queue Base Address
+
+	nvme_admin(val1, val2, val3, val4, nvme_iosqb);
 }
 
 int nvme_init_enable_wait(void)
@@ -284,7 +316,6 @@ void config_admin_queues(void)
 	void* addr_asq = (void *) ((uint64_t) nvme_base + nvme_asq);
 
 	int nvme_acq = 0x30; // 8-byte admin completion queue base address
-	uint64_t nvme_acqb = 0x0000000000171000; // 0x171000 -> 0x171FFF	4K admin completion queue base address
 	void* addr_acq = (void *) ((uint64_t) nvme_base + nvme_acq);
 
 	// printk("@value={d}\n", value);
