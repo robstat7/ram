@@ -139,6 +139,10 @@ int nvme_init(void *xsdp)
 	create_io_queues();
 
 
+	// Save the Identify Controller structure
+	save_identify_struct();
+
+
 	// /* continue initialization in assembly code */
 	// __asm__("mov rsi, %0\n\t"
 	// 	"call nvme_init_final"
@@ -244,6 +248,17 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 		val = 0;
 
 	nvme_admin_savetail(val, &nvme_atail, tmp);
+}
+
+void save_identify_struct(void)
+{
+	uint32_t cdw0 = 0x00000006;	// CDW0 CID 0, PRP used (15:14 clear), FUSE normal (bits 9:8 clear), command Identify (0x06)
+	uint32_t cdw1 = 0;	// CDW1 Ignored
+	uint32_t nvme_ID_CTRL = 0x01;		// CDW10 CNS. Identify Controller data structure for the controller
+	uint32_t cdw11 = 0;	// CDW11 Ignored
+	uint64_t nvme_CTRLID = 0x0000000000174000; // CDW6-7 DPTR. 0x174000 -> 0x174FFF	4K Controller Identify Data
+
+	nvme_admin(cdw0, cdw1, nvme_ID_CTRL, cdw11, nvme_CTRLID);
 }
 
 void create_io_queues(void)
