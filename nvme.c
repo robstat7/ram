@@ -141,6 +141,8 @@ int nvme_init(void *xsdp)
 	/* create IO queues */
 	create_io_queues();
 
+	printk("done\n");
+
 
 	// Save the Identify Controller structure
 	save_identify_struct();
@@ -169,8 +171,6 @@ int nvme_init(void *xsdp)
 	// 	printk("{c}", data[i]);
 
 	// printk("\n");
-
-	printk("done\n");
 
 	return 0;
 }

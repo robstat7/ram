@@ -3,7 +3,7 @@
 ;
 format ELF64
 
-extrn nvme_base
+;extrn nvme_base
 
 public nvme_init_final
 
@@ -54,6 +54,7 @@ storage_io		equ SystemVariables + 0x00B0
 ; outputs:
 ;
 nvme_init_final:
+	mov [NVME_BASE], rsi
 	; disable the controller if it's enabled
 	mov eax, [rsi+nvme_cc]
 	btc eax, 0			; clear CC.EN (0) bit to '0'
@@ -242,7 +243,7 @@ nvme_admin:
 	stosd				; CDW15
 
 	; Start the Admin command by updating the tail doorbell
-	mov rdi, [nvme_base]
+	mov rdi, [NVME_BASE]
 	xor eax, eax
 	push rcx
 	mov rcx, nvme_atail
@@ -268,7 +269,7 @@ nvme_admin_savetail:
 nvme_admin_wait:
 	mov rax, [rdi]
 	cmp rax, 0x0
-	; je nvme_admin_wait		; TODO: fix infinite loop
+	je nvme_admin_wait		; TODO: fix infinite loop
 	xor eax, eax
 	stosq				; Overwrite the old entry
 
@@ -385,7 +386,7 @@ nvme_io_calc_rpr2_end:
 	stosd				; CDW15 ELBATM (31:16), ELBAT (15:00)
 
 	; Start the I/O command by updating the tail doorbell
-	mov rdi, [nvme_base]
+	mov rdi, [NVME_BASE]
 	xor eax, eax
 
 	push rcx
@@ -442,3 +443,7 @@ nvme_io_error:
 ;
 nvme_id:
 	ret
+
+section '.data' writable
+
+NVME_BASE dq 0
