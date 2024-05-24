@@ -233,16 +233,18 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	uint64_t *nvme_asqb = 0x0000000000170000;	// 0x170000 -> 0x170FFF	4K admin submission queue base address
 	void *nvme_atail = (char *) SystemVariables + 0x0311;
 	uint8_t val;
-	uint32_t tmp;
+	uint32_t tmp, val_32;
 	int64_t val2;
 
 	// Build the command at the expected location in the Submission ring
 	val = *((char *) nvme_atail); // Get the current Admin tail value
 	
-	printk("@atail={d}\n", val);
+	val_32 = val;
+	
+	printk("@admin tail value={d}\n", val_32);
 
-	val = (val << 6);			// Quick multiply by 64
-	nvme_asqb = (char *) nvme_asqb + val;
+	val_32 = (val_32 << 6);			// Quick multiply by 64
+	nvme_asqb = (char *) nvme_asqb + val_32;
 
 	// Build the structure
 	*((uint32_t *) nvme_asqb) = cdw0;	// CDW0
