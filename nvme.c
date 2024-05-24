@@ -207,9 +207,9 @@ void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_v
 	uint32_t val_new = val;
 	uint64_t acqb_copy = nvme_acqb;
 
-	*((unsigned char *) nvme_atail) = val;	// Save the tail for the next command
+	*((char *) nvme_atail) = val;	// Save the tail for the next command
 
-	*((uint32_t *) val2 + 0x1000) = val_new; // Write the new tail value
+	*((uint32_t *) ((char *) val2 + 0x1000)) = val_new; // Write the new tail value
 
 	// Check completion queue
 	old_tail_val = (old_tail_val << 4);	// Each entry is 16 bytes
@@ -217,7 +217,7 @@ void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_v
 	acqb_copy += old_tail_val;
 	
 	/* skipping for now */
-	// nvme_admin_wait(acqb_copy);
+	nvme_admin_wait(acqb_copy);
 }
 
 /*
@@ -225,21 +225,19 @@ void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_v
  */
 void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, uint64_t cdw6_7)
 {
-	uint64_t cdw6_7_copy = cdw6_7;
-	uint32_t cdw0_copy = cdw0;
-	uint64_t nvme_asqb = 0x0000000000170000;	// 0x170000 -> 0x170FFF	4K admin submission queue base address
-	uint64_t nvme_atail = SystemVariables + 0x0311;
+	uint64_t *nvme_asqb = 0x0000000000170000;	// 0x170000 -> 0x170FFF	4K admin submission queue base address
+	void *nvme_atail = (char *) SystemVariables + 0x0311;
 	uint8_t val;
 	uint32_t tmp;
 	int64_t val2;
 
 	// Build the command at the expected location in the Submission ring
-	val = *((uint8_t *) nvme_atail); // Get the current Admin tail value
+	val = *((char *) nvme_atail); // Get the current Admin tail value
 	
 	printk("@atail={d}\n", val);
 
 	val = (val << 6);			// Quick multiply by 64
-	nvme_asqb = nvme_asqb + val;
+	nvme_asqb = (char *) nvme_asqb + val;
 
 	// Build the structure
 	*((uint32_t *) nvme_asqb) = cdw0;	// CDW0
@@ -303,8 +301,8 @@ void create_io_queues(void)
 
 int nvme_init_enable_wait(void)
 {
-	int nvme_csts =  0x1C; // 4-byte controller status property
-	void* addr = (void *) ((uint64_t) nvme_base + nvme_csts);
+	char nvme_csts =  0x1C; // 4-byte controller status property
+	void* addr = (void *) ((char *) nvme_base + nvme_csts);
 	uint32_t val;
 
 	do{
@@ -322,8 +320,8 @@ int nvme_init_enable_wait(void)
 void enable_nvme_controller(void)
 {
 	uint32_t val = 0x00460001;		// set iocqes (23:20), iosqes (19:16), and en (0)
-	int nvme_cc = 0x14;	// 4-byte controller configuration property
-	void* addr = (void *) ((uint64_t) nvme_base + nvme_cc);
+	char nvme_cc = 0x14;	// 4-byte controller configuration property
+	void* addr = (void *) ((char *) nvme_base + nvme_cc);
 
 	*((uint32_t *) addr) = val;	// write the new cc value and enable controller
 	
@@ -333,8 +331,8 @@ void enable_nvme_controller(void)
 void disable_controller_interrupts(void)
 {
 	uint32_t val = 0xffffffff;		// mask all interrupts
-	int nvme_intms = 0x0C; // 4-byte interrupt mask set
-	void* addr_intms = (void *) ((uint64_t) nvme_base + nvme_intms);
+	char nvme_intms = 0x0C; // 4-byte interrupt mask set
+	void* addr_intms = (void *) ((char *) nvme_base + nvme_intms);
 
 	*((uint32_t *) addr_intms) = val;
 }
@@ -344,16 +342,16 @@ void disable_controller_interrupts(void)
  */
 void config_admin_queues(void)
 {
-	int nvme_aqa = 0x24;		// 4-byte Admin Queue Attributes
-	void* addr_aqa = (void *) ((uint64_t) nvme_base + nvme_aqa);
+	char nvme_aqa = 0x24;		// 4-byte Admin Queue Attributes
+	void* addr_aqa = (void *) ((char *) nvme_base + nvme_aqa);
 	uint32_t value = 0x003f003f;		// 64 commands each for ACQS (27:16) and ASQS (11:00)
 
-	int nvme_asq = 0x28;	// 8-byte admin submission queue base address
+	char nvme_asq = 0x28;	// 8-byte admin submission queue base address
 	uint64_t nvme_asqb = 0x0000000000170000; // 0x170000 -> 0x170FFF	4K admin submission queue base address
-	void* addr_asq = (void *) ((uint64_t) nvme_base + nvme_asq);
+	void* addr_asq = (void *) ((char *) nvme_base + nvme_asq);
 
-	int nvme_acq = 0x30; // 8-byte admin completion queue base address
-	void* addr_acq = (void *) ((uint64_t) nvme_base + nvme_acq);
+	char nvme_acq = 0x30; // 8-byte admin completion queue base address
+	void* addr_acq = (void *) ((char *) nvme_base + nvme_acq);
 
 	// printk("@value={d}\n", value);
 
@@ -374,8 +372,8 @@ void config_admin_queues(void)
 
 void disable_nvme_controller(void)
 {
-	int nvme_cc = 0x14;	// 4-byte controller configuration property
-	void* addr = (void *) ((uint64_t) nvme_base + nvme_cc);
+	char nvme_cc = 0x14;	// 4-byte controller configuration property
+	void* addr = (void *) ((char *) nvme_base + nvme_cc);
 	uint32_t value;
 
 	value = *((uint32_t *) addr);
