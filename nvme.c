@@ -23,7 +23,7 @@ uint32_t check_mcfg_checksum(uint64_t *mcfg);
 void check_all_buses(uint16_t start, uint16_t end);
 int find_nvme_controller(uint16_t bus, uint8_t device, uint8_t function);
 uint64_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function);
-int check_nvme_vs(uint64_t *nvme_base);
+int check_nvme_vs(void);
 uint8_t get_device_irq_num(uint16_t bus, uint8_t device, uint8_t function);
 void *get_base_phy_addr(uint16_t bus, uint8_t device, uint8_t function);
 void enable_pci_bus_mastering(void);
@@ -102,7 +102,7 @@ int nvme_init(void *xsdp)
 	uncacheable_memory();
 
 	/* check for a valid version number (bits 31:16 should be greater than 0) */
-	if(check_nvme_vs(nvme_base) == 1) {
+	if(check_nvme_vs() == 1) {
 		return 1;
 	}
 
@@ -147,14 +147,18 @@ int nvme_init(void *xsdp)
 	// Save the Identify Controller structure
 	save_identify_struct();
 
+	
+	// int32_t my_val = 5;
 
 	// /* continue initialization in assembly code */
 	// __asm__("mov rsi, %0\n\t"
-	// 	"call nvme_init_final"
-	// 	::"m" (nvme_base):);
+	// 	"call nvme_asm_init\n\t"
+	// 	"mov %1, ebx"
+	// 	::"m" (nvme_base),
+	// 	"m" (my_val):"rsi");
 
-	// printk("nvme: controller is initialized!\n");
-
+	// printk("nvme: controller is initialized! returned {d}\n", my_val);
+	//
 	// char data[512];
 	// /* test: read a text file and it should print- Hello World! */
 	// __asm__("mov rax, 421914624\n\t"
@@ -163,7 +167,7 @@ int nvme_init(void *xsdp)
 	// 	"mov rdx, 0\n\t"
 	// 	"mov rdi, %0\n\t"
 	// 	"call nvme_io"
-	// 	::"m" (data):);
+	// 	::"m" (data):"rax", "rbx", "rcx", "rdx", "rdi");
 
 	// printk("nvme: done reading data! Output=\n");
 
@@ -179,7 +183,7 @@ void uncacheable_memory(void)
 {
 	__asm__("mov rax, %0\n\t"
 		"shr rax, 18\n\t"
-		"and al, 0b11111000\n\t"		// Clear the last 3 bits
+		"and al, 0xF8\n\t"		// Clear the last 3 bits
 		"mov rdi, 0x10000\n\t"		// Base of low PDE
 		"add rdi, rax\n\t"
 		"mov rax, [rdi]\n\t"
@@ -409,7 +413,7 @@ void enable_pci_bus_mastering(void)
 	__asm__("mov eax, %0\n\t"
 		"bts eax, 2\n\t"
 		"mov %0, eax"
-		::"m" (value):);
+		::"m" (value):"eax");
 	
 	*((int32_t *) phy_addr) = value;	/* write value to pcie device's register #1 */
 
@@ -441,7 +445,7 @@ uint8_t get_device_irq_num(uint16_t bus, uint8_t device, uint8_t function)
 }
 
 /* returns 0 on success else 1 on failure */
-int check_nvme_vs(uint64_t *nvme_base)
+int check_nvme_vs(void)
 {
 	void *phy_addr;
 	uint32_t value, tmp;
@@ -457,7 +461,7 @@ int check_nvme_vs(uint64_t *nvme_base)
 		"mov %2, eax"	  /* copy eax to tmp C variable */
 		::"m" (value),
 		"m" (mjr_num),
-		"m" (tmp):);
+		"m" (tmp):"eax");
 
 	if (mjr_num < 1) {
 		printk("error: nvme: invalid major version number!\n");
@@ -473,7 +477,7 @@ int check_nvme_vs(uint64_t *nvme_base)
 		"mov %2, al"
 		::"m" (tmp),
 		"m" (mnr_num),
-		"m" (ter_num):);
+		"m" (ter_num):"eax");
 
 	nvme_mnr_num = mnr_num;	/* store minor and tertiary ver num */
 	nvme_ter_num = ter_num;
