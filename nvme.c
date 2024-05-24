@@ -213,10 +213,15 @@ void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_v
 
 	// Check completion queue
 	old_tail_val = (old_tail_val << 4);	// Each entry is 16 bytes
-	old_tail_val += 8;	// Add 8 for DW3
-	acqb_copy += old_tail_val;
+	old_tail_val = (uint32_t) ((char *) old_tail_val + 8);	// Add 8 for DW3
+
+	printk("@old_tail_val={d}\n", old_tail_val);
+	printk("@acqb_copy={llu}\n", acqb_copy);
+
+	acqb_copy = (uint64_t) ((char *) acqb_copy + old_tail_val);
+
+	printk("@acqb_copy={llu}\n", acqb_copy);
 	
-	/* skipping for now */
 	nvme_admin_wait(acqb_copy);
 }
 
