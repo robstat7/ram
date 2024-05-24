@@ -202,14 +202,14 @@ void nvme_admin_wait(uint64_t acqb_copy)
 	*((uint64_t *) acqb_copy) = 0; // Overwrite the old entry
 }	
 
-void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_val, int64_t val2)
+void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_val)
 {
 	uint32_t val_new = val;
 	uint64_t acqb_copy = nvme_acqb;
 
 	*((char *) nvme_atail) = val;	// Save the tail for the next command
 
-	*((uint32_t *) ((char *) val2 + 0x1000)) = val_new; // Write the new tail value
+	*((uint32_t *) ((char *) nvme_base + 0x1000)) = val_new; // Write the new tail value
 
 	// Check completion queue
 	old_tail_val = (old_tail_val << 4);	// Each entry is 16 bytes
@@ -260,7 +260,6 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	*((uint32_t *) nvme_asqb) = 0;	// CDW15
 	
 	// Start the Admin command by updating the tail doorbell
-	val2 = *((int64_t *) nvme_base);
 	val = *((uint8_t *) nvme_atail); // Get the current Admin tail value
 	tmp = val;	// Save the old Admin tail value for reading from the completion ring
 	val++;			// Add 1 to it
@@ -270,7 +269,7 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	if(val >= 64)
 		val = 0;
 
-	nvme_admin_savetail(val, &nvme_atail, tmp, val2);
+	nvme_admin_savetail(val, &nvme_atail, tmp);
 }
 
 void save_identify_struct(void)
@@ -493,8 +492,6 @@ uint64_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function) {
 
 	value = (value & 0xFFFFFFF0);		/* clear the lowest 4 bits */
 	
-	// value = value >> 14;
-
 	return value;
 }
 
