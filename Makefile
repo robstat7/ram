@@ -13,8 +13,10 @@ ibuild_and_boot_kernel:
 	
 	nasm interrupt.asm -f elf64 -o build/interrupt.o
 	
+	fasm call_bash.asm build/call_bash.o
+	
 	ld -shared -Bsymbolic -L ../gnu-efi/x86_64/lib/ -L ../gnu-efi/x86_64/gnuefi/ -T /home/dileep/gnu-efi/gnuefi/elf_x86_64_efi.lds \
-		../gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o build/kernel.o build/isr.o build/descriptor_load.o build/interrupt.o -o build/system.so -lefi -lgnuefi
+		../gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o build/kernel.o build/call_bash.o build/isr.o build/descriptor_load.o build/interrupt.o -o build/system.so -lefi -lgnuefi
 	
 	objcopy -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 build/system.so build/BOOTx64.EFI
 	
