@@ -11,6 +11,7 @@
 #include "fb.h"
 
 int8_t validate_xsdp_checksum(void *table);
+UINT64 FileSize(EFI_FILE_HANDLE FileHandle);
 
 EFI_STATUS
 EFIAPI
@@ -34,12 +35,54 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	void *table;
 	void *xsdp;
 	uint8_t revision;
+	EFI_LOADED_IMAGE *loaded_image;                  /* image interface */
+  	EFI_GUID lipGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;      /* image interface GUID */
+  	EFI_FILE_HANDLE Volume;
+	CHAR16              *FileName;
+  	EFI_FILE_HANDLE     FileHandle;
+	UINT64              ReadSize;
+  	UINT8               *Buffer;
 
+
+	FileName = L"hello";
+	loaded_image = NULL;
 	xsdp = NULL;
 	table = NULL;
 	
 
 	InitializeLib(ImageHandle, SystemTable);
+	
+
+
+
+	/* load bash program 4 loadable segments in memory */
+	/* 1. read file into memory first */
+	uefi_call_wrapper(BS->HandleProtocol, 3, ImageHandle, &lipGuid, (void **) &loaded_image);
+	/* get the volume handle */
+	Volume = LibOpenRoot(loaded_image->DeviceHandle);
+
+	/* open the file */
+  	uefi_call_wrapper(Volume->Open, 5, Volume, &FileHandle, FileName, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+
+	/* read file into memory */
+	ReadSize = FileSize(FileHandle);
+	Buffer = AllocatePool(ReadSize);
+
+	uefi_call_wrapper(FileHandle->Read, 3, FileHandle, &ReadSize, Buffer);
+
+	Print(L"loading segs...\n");
+	/* load loadable segments */
+// 	memcpy((void *)0x0000000000400000, (void *)Buffer, (size_t)0x00000000000004f8);
+// 	memcpy((void *)0x0000000000401000, (void *)(Buffer + 0x0000000000001000), (size_t)0x000000000007ddf1);
+// 	memcpy((void *)0x000000000047f000, (void *)(Buffer + 0x000000000007f000), (size_t)0x0000000000027a8c);
+// 	memcpy((void *)0x00000000004a72f0, (void *)(Buffer + 0x00000000000a72f0), (size_t)0x00000000000057b8);
+
+
+ 	memcpy((void *)0x4016d0, (void *)Buffer, (size_t)2);
+
+
+
+
 
 	/* detecting GOP */
 	status = uefi_call_wrapper(BS->LocateProtocol, 3, &gopGuid, NULL, (void**)&gop);
@@ -112,6 +155,11 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		goto end;
 	}
 
+	/* free resources */
+	// FreePool(loaded_image);
+  	FreePool(FileName);
+  	FreePool(Buffer);
+
 	
 	/* try to exit boot services 3 times */
   	for (i = 0; i < 3; i++) {
@@ -172,4 +220,15 @@ int8_t validate_xsdp_checksum(void *table)
 	}
 
 	return (int8_t) sum;
+}
+
+UINT64 FileSize(EFI_FILE_HANDLE FileHandle)
+{
+  UINT64 ret;
+  EFI_FILE_INFO       *FileInfo;         /* file information structure */
+  /* get the file's size */
+  FileInfo = LibFileInfo(FileHandle);
+  ret = FileInfo->FileSize;
+  FreePool(FileInfo);
+  return ret;
 }

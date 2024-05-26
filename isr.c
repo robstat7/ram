@@ -13,6 +13,10 @@ void isr_handler(registers_t regs)
 	if (interrupt_handlers[regs.int_no] != 0) {
 		isr_t handler = interrupt_handlers[regs.int_no];
 		handler(regs);
+	} else {
+		printk("interrupt: recieved interrupt: {d}\n", regs.int_no);
+		printk("interrupt: interrupt error code: {d}\n", regs.err_code);
+		printk("interrupt: saved rip: {p}\n", (void *) regs.rip);
 	}
 }
 
