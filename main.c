@@ -7,7 +7,7 @@
 #include "fb.h"
 #include <stdint.h>
 
-void (*hello)(void) = (void (*)())0x4016d0;
+// void (*hello)(void) = (void (*)())0x4016d0;
 
 int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 {
