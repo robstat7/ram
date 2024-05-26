@@ -17,6 +17,7 @@ UINT64 FileSize(EFI_FILE_HANDLE FileHandle);
 
 void init_gdt(void);
 void init_idt(void);
+void (*bash)(void) = (void (*)())0x4033e0;
 
 EFI_STATUS
 EFIAPI
@@ -86,15 +87,19 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	/* entry point of bash */
 
-	void (*bash)(void) = (void (*)())0x4033e0;
+	// void (*bash)(void) = (void (*)())0x4033e0;
 	Print(L"executing bash ...\n");
 
-	__asm__("push rbp\n\t"
-		"mov rbp, rsp\n\t"
-		"and rsp, 0xfffffffffffffff0"
+	__asm__("call pre_bash"
 		:::);
 
-	bash();
+	// __asm__("push rbp\n\t"
+	// 	"mov rbp, rsp\n\t"
+	// 	"and rsp, 0xfffffffffffffff0\n\t"
+	// 	"call bash"
+	// 	:::);
+
+	// bash();
 
 	Print(L"I should not be printed!...\n");
 
