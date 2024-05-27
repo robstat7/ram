@@ -12,7 +12,7 @@ uint64_t *pcie_ecam = NULL;
 int16_t detected_bus_num = -1;
 int16_t detected_device_num = -1;
 int16_t detected_function_num = -1;
-uint64_t* nvme_base = NULL;
+volatile uint64_t *nvme_base = NULL;
 uint8_t nvme_mjr_num = 0;
 uint8_t nvme_mnr_num = 0, nvme_ter_num = 0, nvme_irq = 0;
 uint32_t SystemVariables	= 0x0000000000110000; // 0x110000 -> System Variables
@@ -22,7 +22,7 @@ unsigned char check_xsdt_checksum(uint64_t *xsdt, uint32_t xsdt_length);
 uint32_t check_mcfg_checksum(uint64_t *mcfg);
 void check_all_buses(uint16_t start, uint16_t end);
 int find_nvme_controller(uint16_t bus, uint8_t device, uint8_t function);
-uint64_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function);
+volatile uint64_t *get_nvme_base(uint16_t bus, uint8_t device, uint8_t function);
 int check_nvme_vs(void);
 uint8_t get_device_irq_num(uint16_t bus, uint8_t device, uint8_t function);
 void *get_base_phy_addr(uint16_t bus, uint8_t device, uint8_t function);
@@ -93,8 +93,8 @@ int nvme_init(void *xsdp)
 		return 1;
 	}
 
-	/* read register 4 for BAR0 */
-	nvme_base = get_bar0(detected_bus_num, detected_device_num, detected_function_num);
+	/* get nvme base address */
+	nvme_base = get_nvme_base(detected_bus_num, detected_device_num, detected_function_num);
 
 	printk("@nvme_base={p}\n", (void *) nvme_base);
 
@@ -145,7 +145,7 @@ int nvme_init(void *xsdp)
 
 
 	// Save the Identify Controller structure
-	save_identify_struct();
+	// save_identify_struct();
 
 	
 	// int32_t my_val = 5;
@@ -496,20 +496,32 @@ int check_nvme_vs(void)
 	return 0;
 }
 
-/* read register 4 for BAR0 */
-uint64_t *get_bar0(uint16_t bus, uint8_t device, uint8_t function) {
-	uint64_t *phy_addr;
-	uint32_t value;
+volatile uint64_t *get_nvme_base(uint16_t bus, uint8_t device, uint8_t function) {
+	volatile char *phy_addr;
+	uint32_t bar0_value, bar1_value;
+	uint64_t base_addr;
 
-	phy_addr = (uint64_t *) ((uint64_t) pcie_ecam + (((uint32_t) bus) << 20 | ((uint32_t) device) << 15 | ((uint32_t) function) << 12));
+	phy_addr = (volatile char *) ((uint64_t) pcie_ecam + (((uint32_t) bus) << 20 | ((uint32_t) device) << 15 | ((uint32_t) function) << 12));
 
-	phy_addr = (uint64_t *) ((char *) phy_addr + (4 * 4));	/* Multiplying by 4 because each register consists of 4 bytes */
+	phy_addr = phy_addr + (4 * 4);	/* Multiplying by 4 because each register consists of 4 bytes */
 
-	value = *((uint32_t *) phy_addr);
+	/* read register 4 for BAR0 */
+	bar0_value = *(volatile uint32_t *) phy_addr;
 
-	value = (value & 0xFFFFFFF0);		/* clear the lowest 4 bits */
-	
-	return value;
+	if((bar0_value & 0x6) == 0x4) {	// type (2:1) is 0x2 means the base register is 64-bits wide
+		phy_addr += 4;	/* BAR1 is the register no. 5 */
+		bar1_value = *(volatile uint32_t *) phy_addr;
+
+		base_addr = bar1_value;
+		base_addr <<= 32;		/* left shift 32 bits */
+		base_addr |= (uint64_t) bar0_value;
+	} else if((bar0_value & 0x6) == 0x0) {	/* type (2:1) is 0x0 means the base register is 32-bits wide */
+		base_addr = bar0_value;
+	}
+
+	base_addr &= 0xfffffffffffffff0;		/* clear the lowest 4 bits */
+
+	return (volatile uint64_t *) base_addr;
 }
 
 
