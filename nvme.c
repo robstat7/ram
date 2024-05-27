@@ -17,7 +17,6 @@ uint8_t nvme_mjr_num = 0;
 uint8_t nvme_mnr_num = 0, nvme_ter_num = 0, nvme_irq = 0;
 uint32_t SystemVariables	= 0x0000000000110000; // 0x110000 -> System Variables
 uint64_t nvme_acqb = 0x0000000000171000; // 0x171000 -> 0x171FFF	4K admin completion queue base address
-int count = 1;
 
 unsigned char check_xsdt_checksum(uint64_t *xsdt, uint32_t xsdt_length);
 uint32_t check_mcfg_checksum(uint64_t *mcfg);
@@ -142,11 +141,9 @@ int nvme_init(void *xsdp)
 	/* create IO queues */
 	create_io_queues();
 
-	printk("done\n");
-
 
 	// Save the Identify Controller structure
-	// save_identify_struct();
+	save_identify_struct();
 
 	
 	// int32_t my_val = 5;
@@ -176,6 +173,8 @@ int nvme_init(void *xsdp)
 	// 	printk("{c}", data[i]);
 
 	// printk("\n");
+	
+	printk("done!\n");
 
 	return 0;
 }
@@ -207,8 +206,6 @@ void nvme_admin_wait(uint64_t acqb_copy)
 	do{
 		val = *(volatile uint64_t *) acqb_copy;
 		// printk("@val={lld}\n", val);
-		if(count ==2)
-			printk("hang!!!\n");
 	}while(val == 0);
 
 	*(uint64_t *) acqb_copy = 0; // Overwrite the old entry
@@ -327,7 +324,6 @@ void create_io_queues(void)
 	// Create I/O Completion Queue
 	nvme_admin(val1, val2, val3, val4, nvme_iocqb);
 
-	count++;
 	// Create I/O Submission Queue
 	val1 = 0x00010001;	// CDW0 CID (31:16), PRP used (15:14 clear), FUSE normal (bits 9:8 clear), command Create I/O Submission Queue (0x01)
 	val3 = 0x003F0001;		// CDW10 QSIZE 64 entries (31:16), QID 1 (15:0)
