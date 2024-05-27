@@ -8,6 +8,7 @@
 
 #define NVMe_VS		0x8	/* BAR0 Version register's offset */
 #define NVMe_ANS	0x02	/* Active Namespace ID list */
+#define NVMe_ID_NS	0x00	/* Identify Namespace data structure for the specified NSID */
 
 uint64_t *pcie_ecam = NULL;
 int16_t detected_bus_num = -1;
@@ -19,6 +20,7 @@ uint8_t nvme_mnr_num = 0, nvme_ter_num = 0, nvme_irq = 0;
 uint32_t SystemVariables	= 0x0000000000110000; // 0x110000 -> System Variables
 uint64_t nvme_acqb = 0x0000000000171000; // 0x171000 -> 0x171FFF	4K admin completion queue base address
 uint64_t nvme_ans = 0x0000000000175000; // 0x175000 -> 0x175FFF	4K Namespace Data
+uint64_t nvme_nsid = 0x0000000000176000; // 0x176000 -> 0x176FFF	4K Namespace Identify Data
 
 unsigned char check_xsdt_checksum(uint64_t *xsdt, uint32_t xsdt_length);
 uint32_t check_mcfg_checksum(uint64_t *mcfg);
@@ -145,11 +147,15 @@ int nvme_init(void *xsdp)
 
 
 	// Save the Identify Controller structure
-	save_identify_struct();
+	save_controller_struct();
 
 
 	/* Save the Active Namespace ID list */
 	save_active_nsid_list();
+
+
+	/* Save the Identify Namespace data */
+	save_namespace_data();
 
 
 	
@@ -309,6 +315,15 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	nvme_admin_savetail(a_tail_val, nvme_atail, tmp);
 }
 
+void save_namespace_data()
+{
+	uint32_t cdw0 = 0x00000006;	// CDW0 CID 0, PRP used (15:14 clear), FUSE normal (bits 9:8 clear), command Identify (0x06)
+	uint32_t cdw1 = 1;	// CDW1 NSID
+	uint32_t cdw11 = 0;	// CDW11 Ignored
+
+	nvme_admin(cdw0, cdw1, NVMe_ID_NS, cdw11, nvme_nsid); 	// CDW10 CNS. CDW6-7 DPTR
+}
+
 void save_active_nsid_list(void)
 {
 	uint32_t cdw0 = 0x00000006;	// CDW0 CID 0, PRP used (15:14 clear), FUSE normal (bits 9:8 clear), command Identify (0x06)
@@ -318,7 +333,7 @@ void save_active_nsid_list(void)
 	nvme_admin(cdw0, cdw1, NVMe_ANS, cdw11, nvme_ans); 	// CDW10 CNS. CDW6-7 DPTR
 }
 
-void save_identify_struct(void)
+void save_controller_struct(void)
 {
 	uint32_t cdw0 = 0x00000006;	// CDW0 CID 0, PRP used (15:14 clear), FUSE normal (bits 9:8 clear), command Identify (0x06)
 	uint32_t cdw1 = 0;	// CDW1 Ignored
