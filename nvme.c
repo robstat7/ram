@@ -204,11 +204,11 @@ void nvme_admin_wait(uint64_t acqb_copy)
 	uint64_t val;
 
 	do{
-		val = *((uint64_t *) acqb_copy);
+		val = *(volatile uint64_t *) acqb_copy;
 		//printk("@val={lld}\n", val);
 	}while(val == 0);
 
-	*((uint64_t *) acqb_copy) = 0; // Overwrite the old entry
+	*(uint64_t *) acqb_copy = 0; // Overwrite the old entry
 }	
 
 void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_val)
@@ -216,7 +216,7 @@ void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_v
 	uint32_t val_new = val;
 	uint64_t acqb_copy = nvme_acqb;
 
-	*((char *) nvme_atail) = val;	// Save the tail for the next command
+	*((uint8_t *) nvme_atail) = val;	// Save the tail for the next command
 
 	*((uint32_t *) ((char *) nvme_base + 0x1000)) = val_new; // Write the new tail value
 
@@ -227,7 +227,7 @@ void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_v
 	printk("@old_tail_val={d}\n", old_tail_val);
 	printk("@acqb_copy={llu}\n", acqb_copy);
 
-	acqb_copy = (uint64_t) ((char *) acqb_copy + old_tail_val);
+	acqb_copy += old_tail_val;
 
 	printk("@acqb_copy={llu}\n", acqb_copy);
 	
@@ -240,22 +240,26 @@ void nvme_admin_savetail(uint8_t val, uint64_t * nvme_atail, uint32_t old_tail_v
 void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, uint64_t cdw6_7)
 {
 	uint64_t *nvme_asqb = 0x0000000000170000;	// 0x170000 -> 0x170FFF	4K admin submission queue base address
-	void *nvme_atail = (char *) SystemVariables + 0x0311;
+	void *nvme_atail = SystemVariables + 0x0311;
 	uint32_t tmp, a_tail_val;
 	int64_t val2;
+	uint8_t a_tail_val_8;
 
 	// Build the command at the expected location in the Submission ring
-	a_tail_val = *((char *) nvme_atail); // Get the current Admin tail value
+	a_tail_val = *((volatile unsigned char *) nvme_atail); // Get the current Admin tail value
 	
 	// printk("@admin tail value={d}\n", a_tail_val);
 
 	a_tail_val = (a_tail_val << 6);			// Quick multiply by 64
-	nvme_asqb = (uint64_t *) ((char *) nvme_asqb + a_tail_val);
+							//
+	a_tail_val_8 = a_tail_val;
+
+	nvme_asqb = (uint64_t *) ((unsigned char *) nvme_asqb + a_tail_val_8);
 
 	// printk("@nvme_asqb={p}\n", (void *) nvme_asqb);
 
 	// Build the structure
-	*((uint32_t *) nvme_asqb) = cdw0;	// CDW0
+	*(uint32_t *) nvme_asqb = cdw0;	// CDW0
 	*((uint32_t *) ((char *) nvme_asqb + 4)) = cdw1;	// CDW1
 	*((uint32_t *) ((char *) nvme_asqb + 8)) = 0;	// CDW2
 	*((uint32_t *) ((char *) nvme_asqb + 12)) = 0;	// CDW3
@@ -270,7 +274,7 @@ void nvme_admin(uint32_t cdw0, uint32_t cdw1, uint32_t cdw10, uint32_t cdw11, ui
 	*((uint32_t *) ((char *) nvme_asqb + 60)) = 0;	// CDW15
 
 	for(int i = 0; i < 64; i++)
-		printk("{d}", *((unsigned char *) nvme_asqb + i));
+		printk("{d}", *((volatile unsigned char *) nvme_asqb + i));
 
 	printk("\n");
 
@@ -327,7 +331,7 @@ int nvme_init_enable_wait(void)
 	uint32_t val;
 
 	do{
-		val = *((uint32_t *) addr);
+		val = *((volatile uint32_t *) addr);
 
 		if((val & 0x2)!= 0x0)	// CSTS.CFS (1) should be 0. If not the controller has had a fatal error
 		{
@@ -374,6 +378,8 @@ void config_admin_queues(void)
 	char nvme_acq = 0x30; // 8-byte admin completion queue base address
 	void* addr_acq = (void *) ((char *) nvme_base + nvme_acq);
 
+	 // memset(nvme_acqb, 0, 4096);
+
 	// printk("@value={d}\n", value);
 
 	*((uint32_t *) addr_aqa) = value;
@@ -397,7 +403,7 @@ void disable_nvme_controller(void)
 	void* addr = (void *) ((char *) nvme_base + nvme_cc);
 	uint32_t value;
 
-	value = *((uint32_t *) addr);
+	value = *((volatile uint32_t *) addr);
 
 	// printk("@value={d}\n", value);
 
@@ -419,7 +425,7 @@ void enable_pci_bus_mastering(void)
 
 	phy_addr = (void *) ((char *) phy_addr + (1 * 4));	/* get status/command from pcie device's register #1 */
 
-	value = *((int32_t *) phy_addr);
+	value = *((volatile int32_t *) phy_addr);
 
 	__asm__("mov eax, %0\n\t"
 		"bts eax, 2\n\t"
@@ -450,7 +456,7 @@ uint8_t get_device_irq_num(uint16_t bus, uint8_t device, uint8_t function)
 
 	phy_addr = (void *) ((char *) phy_addr + (15 * 4));	/* device's IRQ number from PCIe Register 15 (IRQ is bits 7-0). Multiplying by 4 because each register consists of 4 bytes */
 
-	value = *((uint8_t *) phy_addr);
+	value = *(volatile uint8_t *) phy_addr;
 
 	return (uint8_t) value;
 }
@@ -533,7 +539,7 @@ int find_nvme_controller(uint16_t bus, uint8_t device, uint8_t function) {
 
 	phy_addr = (uint64_t *) ((char *) phy_addr + 8);
 
-	value = *((uint32_t *) phy_addr);
+	value = *(volatile uint32_t *) phy_addr;
 	
 	value = value >> 8;
 
@@ -550,7 +556,7 @@ uint16_t get_vendor_id(uint16_t bus, uint8_t device, uint8_t function)
 
 	phy_addr = (uint64_t *) ((uint64_t) pcie_ecam + (((uint32_t) bus) << 20 | ((uint32_t) device) << 15 | ((uint32_t) function) << 12));
 
-	vendor_id = *((uint16_t *) phy_addr);
+	vendor_id = *(volatile uint16_t *) phy_addr;
 
 	return vendor_id;
 }
