@@ -36,7 +36,7 @@ salvation, the knowledge of THAT comes within the heart with the secret, and
 with the arrival of love and feelings for THAT, determination comes into the
 mind. This is the only way to attain salvation. There is no other solution in
 the universe. ||
-<br/>
+<br/><br/>
 
 Sumiran-bhajan (chanting) method can be learned from the following video:
 
