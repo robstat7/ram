@@ -28,14 +28,14 @@ with his inhale and exhale breathing as introduced by His Holiness **Ādi
 **दूजी नहीं सृष्ट में भाई॥**
 <br/>
 
-Meaning: THAT whose nature is true, which is not lacking in all three periods.
-It never happened before, such a time has never come and will never come. Such a
-time will never come. It is a home of joy, a home full of joy. Even its letter
-cannot be pronounced. One whose name is told by the Sataguru for attaining
-salvation, that knowledge (of THAT) comes within the heart with the secret, and
-with the arrival of love and feelings for it, determination comes into the mind.
-This is the only way to attain salvation. There is no other solution in the
-universe. ||
+Meaning: THAT whose nature is true is not lacking in all three periods. It never
+happened before, such a time has never come and will never come. Such a time
+will never come. THAT is a home of joy, a home full of joy. Even THAT's letter
+cannot be pronounced. THAT whose name is told by the Sataguru for attaining
+salvation, the knowledge of THAT comes within the heart with the secret, and
+with the arrival of love and feelings for THAT, determination comes into the
+mind. This is the only way to attain salvation. There is no other solution in
+the universe. ||
 <br/><br/>
 
 Sumiran-bhajan (chanting) method can be learned from the following video:
