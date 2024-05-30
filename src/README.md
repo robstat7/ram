@@ -7,7 +7,7 @@
 Raam is a free and open source 64-bit Unix-like operating system kernel for
 x86-64-based PC.
 
-Updates on my work can be read at [Discussions](https://github.com/robstat7/Raam/discussions/).
+Updates on my work can be read at [Discussions](https://github.com/robstat7/Raam/discussions).
 
 # || Raam || pronunciation
 
@@ -36,7 +36,7 @@ salvation, the knowledge of THAT comes within the heart with the secret, and
 with the arrival of love and feelings for THAT, determination comes into the
 mind. This is the only way to attain salvation. There is no other solution in
 the universe. ||
-<br/><br/>
+<br/>
 
 Sumiran-bhajan (chanting) method can be learned from the following video:
 
