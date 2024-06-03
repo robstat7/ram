@@ -112,19 +112,20 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		goto end;
 	}
 
-	
+
+	/* get memory map */
+	status = uefi_call_wrapper(BS->GetMemoryMap, 5, &msize, &mmap, &mkey, &dsize, NULL);
+	if(EFI_ERROR(status)) {
+		Print(L"error: could not get memory map!\n");
+		goto end;
+	}
+
 	/* try to exit boot services 3 times */
   	for (i = 0; i < 3; i++) {
-		/* get memory map */
-		status = uefi_call_wrapper(BS->GetMemoryMap, 5, &msize, &mmap, &mkey, &dsize, NULL);
-		if(EFI_ERROR(status)) {
-			Print(L"error: could not get memory map!\n");
-			goto end;
-		} else if (status == EFI_SUCCESS) {
-			/* exit boot services */
-			status = uefi_call_wrapper(BS->ExitBootServices, 2, ImageHandle, mkey);
-			if (status == EFI_SUCCESS)
-				break;
+		/* exit boot services */
+		status = uefi_call_wrapper(BS->ExitBootServices, 2, ImageHandle, mkey);
+		if (status == EFI_SUCCESS) {
+			break;
 		}
 	}
 	if(status == EFI_INVALID_PARAMETER) {
