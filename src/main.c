@@ -4,27 +4,22 @@
  * Kernel's main function
  */
 #include <efi.h>
-#include "fb.h"
-#include <stdint.h>
 
-int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
+int main(void *xsdp)
 {
+	// uint32_t SystemVariables	= 0x0000000000110000; // 0x110000 -> System Variables
 
-	uint32_t SystemVariables	= 0x0000000000110000; // 0x110000 -> System Variables
-
-	// Clear all memory after the kernel up to 2MiB
-	__asm__("mov edi, %0\n\t"
-		"mov ecx, 122880\n\t"			// Clear 960 KiB
-		"mov eax, 0\n\t"
-		"rep stosq"
-		::"m" (SystemVariables):"edi", "ecx", "rax");
+	// // Clear all memory after the kernel up to 2MiB
+	// __asm__("mov edi, %0\n\t"
+	// 	"mov ecx, 122880\n\t"			// Clear 960 KiB
+	// 	"mov eax, 0\n\t"
+	// 	"rep stosq"
+	// 	::"m" (SystemVariables):"edi", "ecx", "rax");
 
 
-	/* initialize terminal output */
-	tty_out_init(frame_buffer);
+	/* initialize the global memory manager */
+	// init_global_mm();
 
-	/* fill terminal background color with white */
-	fill_tty_bgcolor();
 
 	/* initialize gdt */
 	init_gdt();
@@ -58,8 +53,8 @@ int main(struct frame_buffer_descriptor frame_buffer, void *xsdp)
 
 
 	/* init nvme */
-	if(nvme_init(xsdp) == 1)
-		goto end;
+	// if(nvme_init(xsdp) == 1)
+	// 	goto end;
 
 end:
 	/* hang here */

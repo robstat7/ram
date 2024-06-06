@@ -11,12 +11,14 @@
 #include "fb.h"
 
 int8_t validate_xsdp_checksum(void *table);
+void find_reserved_mem(UINTN msize, uint8_t mmap[], UINTN dsize);
+int get_mem_map(UINTN *msize, uint8_t *mmap, UINTN *mkey, UINTN *dsize);
 
 EFI_STATUS
 EFIAPI
 efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
-	EFI_STATUS status;
+	EFI_STATUS Status;
 	EFI_GUID gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 	EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
 	EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *info;
@@ -42,16 +44,16 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	InitializeLib(ImageHandle, SystemTable);
 
 	/* detecting GOP */
-	status = uefi_call_wrapper(BS->LocateProtocol, 3, &gopGuid, NULL, (void**)&gop);
-	if(EFI_ERROR(status))
+	Status = uefi_call_wrapper(BS->LocateProtocol, 3, &gopGuid, NULL, (void**)&gop);
+	if(EFI_ERROR(Status))
 		Print(L"error: unable to locate GOP!\n");
 
 	/* get the current mode */
-  	status = uefi_call_wrapper(gop->QueryMode, 4, gop, gop->Mode==NULL?0:gop->Mode->Mode, &SizeOfInfo, &info);
+  	Status = uefi_call_wrapper(gop->QueryMode, 4, gop, gop->Mode==NULL?0:gop->Mode->Mode, &SizeOfInfo, &info);
   	/* this is needed to get the current video mode */
-  	if (status == EFI_NOT_STARTED)
-  		status = uefi_call_wrapper(gop->SetMode, 2, gop, 0);
-  	if(EFI_ERROR(status)) {
+  	if (Status == EFI_NOT_STARTED)
+  		Status = uefi_call_wrapper(gop->SetMode, 2, gop, 0);
+  	if(EFI_ERROR(Status)) {
   		Print(L"error: unable to get native video mode!\n");
   	} else {
   		numModes = gop->Mode->MaxMode;
@@ -60,7 +62,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	/* query available video modes and get the mode number for 1280 x 1024 resolution */
 	mode = -1;
 	for (i = 0; i < numModes; i++) {
-		status = uefi_call_wrapper(gop->QueryMode, 4, gop, i, &SizeOfInfo, &info);
+		Status = uefi_call_wrapper(gop->QueryMode, 4, gop, i, &SizeOfInfo, &info);
 		if (info->HorizontalResolution == 1280 && info->VerticalResolution == 1024 && info->PixelFormat == 1) {
 			mode = i;
 			break;
@@ -71,8 +73,8 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		Print(L"error: unable to get video mode for 1280 x 1024 resolution!\n");
 	} else {
 		/* set video mode and get the framebuffer */
-		status = uefi_call_wrapper(gop->SetMode, 2, gop, mode);
-		if(EFI_ERROR(status)) {
+		Status = uefi_call_wrapper(gop->SetMode, 2, gop, mode);
+		if(EFI_ERROR(Status)) {
 			Print(L"error: unable to set video mode %03d\n", mode);
 		} else {
 			/* store framebuffer information */
@@ -113,29 +115,43 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	}
 
 
+ 	// /* get memory map */
+ 	// if(get_mem_map(&msize, mmap, &mkey, &dsize) == 1) {
+ 	// 	goto end;
+ 	// }
+
+	// /* find the reserved memory */
+	// find_reserved_mem(msize, mmap, dsize);
+
+
 	/* get memory map */
-	status = uefi_call_wrapper(BS->GetMemoryMap, 5, &msize, &mmap, &mkey, &dsize, NULL);
-	if(EFI_ERROR(status)) {
-		Print(L"error: could not get memory map!\n");
+	if(get_mem_map(&msize, mmap, &mkey, &dsize) == 1) {
 		goto end;
 	}
 
 	/* try to exit boot services 3 times */
   	for (i = 0; i < 3; i++) {
 		/* exit boot services */
-		status = uefi_call_wrapper(BS->ExitBootServices, 2, ImageHandle, mkey);
-		if (status == EFI_SUCCESS) {
+		Status = uefi_call_wrapper(BS->ExitBootServices, 2, ImageHandle, mkey);
+		if (Status == EFI_SUCCESS) {
 			break;
 		}
 	}
-	if(status == EFI_INVALID_PARAMETER) {
+	if(Status == EFI_INVALID_PARAMETER) {
 		Print(L"error: exit boot services: map key is incorrect!\n");
 		goto end;
 	}
 
 
+	/* initialize terminal output */
+	tty_out_init(frame_buffer);
+
+	/* fill terminal background color with white */
+	fill_tty_bgcolor();
+
+
 	/* jump to kernel */
-	main(frame_buffer, xsdp);
+	main(xsdp);
 
 
 	/* should not reach here */
@@ -173,4 +189,47 @@ int8_t validate_xsdp_checksum(void *table)
 	}
 
 	return (int8_t) sum;
+}
+
+int get_mem_map(UINTN *msize, uint8_t *mmap, UINTN *mkey, UINTN *dsize)
+{
+	EFI_STATUS Status = uefi_call_wrapper(BS->GetMemoryMap, 5, msize, mmap, mkey, dsize, NULL);
+
+	if(EFI_ERROR(Status)) {
+		Print(L"error: could not get memory map!\n");
+		return 1;
+	}
+
+	return 0;
+}
+
+/*
+ * find the reserved memory
+ *
+ * do not modify the memory map in this function
+ */
+void find_reserved_mem(UINTN msize, uint8_t mmap[], UINTN dsize)
+{
+	int num_desc;
+
+	Print(L"descriptor size=%llu\n", dsize);
+	Print(L"msize=%llu\n\n", msize);
+
+	num_desc = msize/dsize;
+
+	for(int i = 0; i < num_desc; i++) {
+		EFI_MEMORY_DESCRIPTOR desc = *(EFI_MEMORY_DESCRIPTOR *) mmap;
+		if(desc.Type == EfiLoaderCode || desc.Type == EfiLoaderData ||
+		   desc.Type == EfiUnusableMemory ||
+		   desc.Type == EfiACPIReclaimMemory ||
+		   desc.Type == EfiACPIMemoryNVS ||
+		   desc.Type == EfiMemoryMappedIO ||
+		   desc.Type == EfiMemoryMappedIOPortSpace ||
+		   desc.Type == EfiPalCode) {
+			Print(L"physical_start=%llu\n", desc.PhysicalStart);
+			// UINT64 physical_end = (desc.PhysicalStart + (desc.NumberOfPages * 4096)) - 1;
+			Print(L"number of 4 KiB pages=%llu\n", desc.NumberOfPages);
+		}
+		mmap += dsize;
+	}
 }
