@@ -114,6 +114,10 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 
  	/* get memory map */
+	memory_map_uefi.msize = sizeof(memory_map_uefi.mmap);
+	memory_map_uefi.mkey = 0;
+	memory_map_uefi.dsize = 0;
+
 	if(get_mem_map(&memory_map_uefi.msize, memory_map_uefi.mmap, &memory_map_uefi.mkey, &memory_map_uefi.dsize) == 1) {
  		goto end;
  	}
@@ -131,7 +135,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	Print(L"@bitmap = %p\n", (void *) bitmap_ptr);
 	Print(L"bitmap_size = %llu\n", bitmap_size);
 
-	/* get memory map */
+	/* get memory map */	
 	memory_map_uefi.msize = sizeof(memory_map_uefi.mmap);
 	memory_map_uefi.mkey = 0;
 	memory_map_uefi.dsize = 0;
