@@ -3,16 +3,17 @@
  *
  * Boot loader written using gnu-efi
  */
-#include <efi.h>
-#include <efilib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "fb.h"
+#include "mm.h"
 
 int8_t validate_xsdp_checksum(void *table);
 void find_reserved_mem(UINTN msize, uint8_t mmap[], UINTN dsize);
 int get_mem_map(UINTN *msize, uint8_t *mmap, UINTN *mkey, UINTN *dsize);
+void get_ram_attrs(UINTN msize, uint8_t mmap[], UINTN dsize, uint64_t ** physical_start_addr_ptr, uint64_t ** physical_end_addr_ptr, uint64_t *ram_size);
+int create_bitmap(UINTN msize, uint8_t mmap[], UINTN dsize, uint8_t **bitmap_ptr_ptr);
 
 EFI_STATUS
 EFIAPI
@@ -26,10 +27,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	int i;
 	uint32_t mode;
 	struct frame_buffer_descriptor frame_buffer;
-	uint8_t mmap[8900];
-    	UINTN msize = sizeof(mmap);
-	UINTN mkey = 0;
-	UINTN dsize = 0;
+	struct memory_map memory_map_uefi;
 	int num_config_tables;
 	EFI_CONFIGURATION_TABLE *config_tables;
 	EFI_GUID Acpi20TableGuid = ACPI_20_TABLE_GUID;	/* EFI GUID for a pointer to the ACPI 2.0 or later specification XSDP structure */
@@ -115,24 +113,35 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	}
 
 
- 	// /* get memory map */
- 	// if(get_mem_map(&msize, mmap, &mkey, &dsize) == 1) {
- 	// 	goto end;
- 	// }
+ 	/* get memory map */
+	if(get_mem_map(&memory_map_uefi.msize, memory_map_uefi.mmap, &memory_map_uefi.mkey, &memory_map_uefi.dsize) == 1) {
+ 		goto end;
+ 	}
 
 	// /* find the reserved memory */
 	// find_reserved_mem(msize, mmap, dsize);
+	
+	uint8_t *bitmap_ptr;
 
+	if(create_bitmap(memory_map_uefi.msize, memory_map_uefi.mmap, memory_map_uefi.dsize, &bitmap_ptr) == 1) {
+		goto end;
+	}
+
+	Print(L"@bitmap = %p\n", (void *) bitmap_ptr);
 
 	/* get memory map */
-	if(get_mem_map(&msize, mmap, &mkey, &dsize) == 1) {
+	memory_map_uefi.msize = sizeof(memory_map_uefi.mmap);
+	memory_map_uefi.mkey = 0;
+	memory_map_uefi.dsize = 0;
+
+	if(get_mem_map(&memory_map_uefi.msize, memory_map_uefi.mmap, &memory_map_uefi.mkey, &memory_map_uefi.dsize) == 1) {
 		goto end;
 	}
 
 	/* try to exit boot services 3 times */
   	for (i = 0; i < 3; i++) {
 		/* exit boot services */
-		Status = uefi_call_wrapper(BS->ExitBootServices, 2, ImageHandle, mkey);
+		Status = uefi_call_wrapper(BS->ExitBootServices, 2, ImageHandle, memory_map_uefi.mkey);
 		if (Status == EFI_SUCCESS) {
 			break;
 		}
@@ -144,14 +153,15 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 
 	/* initialize terminal output */
-	tty_out_init(frame_buffer);
+	// tty_out_init(frame_buffer);
 
 	/* fill terminal background color with white */
-	fill_tty_bgcolor();
+	// fill_tty_bgcolor();
 
 
 	/* jump to kernel */
-	main(xsdp);
+	// main(xsdp);
+	// main(xsdp, &memory_map_uefi);
 
 
 	/* should not reach here */
@@ -203,6 +213,44 @@ int get_mem_map(UINTN *msize, uint8_t *mmap, UINTN *mkey, UINTN *dsize)
 	return 0;
 }
 
+int create_bitmap(UINTN msize, uint8_t mmap[], UINTN dsize, uint8_t **bitmap_ptr_ptr)
+{
+	uint64_t *physical_start_addr = (uint64_t *) UINT64_MAX, *physical_end_addr = (uint64_t *) 0, ram_size;
+	
+	get_ram_attrs(msize, mmap, dsize, &physical_start_addr, &physical_end_addr, &ram_size);
+
+	const int bitmap_size = ram_size/PAGE_SIZE;
+	Print(L"bitmap_size = %llu\n", bitmap_size);
+
+	
+	EFI_STATUS Status = uefi_call_wrapper(BS->AllocatePool, 3, EfiLoaderData, bitmap_size, (void **) bitmap_ptr_ptr);
+    	if (EFI_ERROR(Status)) {
+        	Print(L"error: allocate_pool: out of pool  %x!\n", Status);
+        	*bitmap_ptr_ptr = NULL;
+		return 1;
+    	}
+
+	return 0;
+}
+
+
+void get_ram_attrs(UINTN msize, uint8_t mmap[], UINTN dsize, uint64_t ** physical_start_addr_ptr, uint64_t ** physical_end_addr_ptr, uint64_t *ram_size)
+{
+	int num_desc = msize/dsize;
+
+	for(int i = 0; i < num_desc; i++) {
+		EFI_MEMORY_DESCRIPTOR desc = *(EFI_MEMORY_DESCRIPTOR *) mmap;
+
+		mmap += dsize;
+
+		uint64_t *PhysicalEnd = (uint64_t *) (desc.PhysicalStart + (desc.NumberOfPages * 4096)) - 1;
+
+		*physical_start_addr_ptr = ((uint64_t) desc.PhysicalStart < (uint64_t) *physical_start_addr_ptr) ? (uint64_t *) desc.PhysicalStart : *physical_start_addr_ptr;
+		*physical_end_addr_ptr = ((uint64_t) PhysicalEnd > (uint64_t) *physical_end_addr_ptr) ? PhysicalEnd : *physical_end_addr_ptr;
+	}
+	*ram_size = (uint64_t) *physical_end_addr_ptr - (uint64_t) *physical_start_addr_ptr;
+}
+
 /*
  * find the reserved memory
  *
@@ -225,7 +273,8 @@ void find_reserved_mem(UINTN msize, uint8_t mmap[], UINTN dsize)
 		   desc.Type == EfiACPIMemoryNVS ||
 		   desc.Type == EfiMemoryMappedIO ||
 		   desc.Type == EfiMemoryMappedIOPortSpace ||
-		   desc.Type == EfiPalCode) {
+		   desc.Type == EfiPalCode ||
+		   desc.Type == EfiReservedMemoryType) {
 			Print(L"physical_start=%llu\n", desc.PhysicalStart);
 			// UINT64 physical_end = (desc.PhysicalStart + (desc.NumberOfPages * 4096)) - 1;
 			Print(L"number of 4 KiB pages=%llu\n", desc.NumberOfPages);
