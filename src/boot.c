@@ -13,7 +13,7 @@ int8_t validate_xsdp_checksum(void *table);
 void find_reserved_mem(UINTN msize, uint8_t mmap[], UINTN dsize);
 int get_mem_map(UINTN *msize, uint8_t *mmap, UINTN *mkey, UINTN *dsize);
 void get_ram_attrs(UINTN msize, uint8_t mmap[], UINTN dsize, uint64_t ** physical_start_addr_ptr, uint64_t ** physical_end_addr_ptr, uint64_t *ram_size);
-int create_bitmap(UINTN msize, uint8_t mmap[], UINTN dsize, uint8_t **bitmap_ptr_ptr);
+int create_bitmap(UINTN msize, uint8_t mmap[], UINTN dsize, uint8_t **bitmap_ptr_ptr, uint64_t *bitmap_size_ptr);
 
 EFI_STATUS
 EFIAPI
@@ -122,12 +122,14 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	// find_reserved_mem(msize, mmap, dsize);
 	
 	uint8_t *bitmap_ptr;
+	uint64_t bitmap_size;
 
-	if(create_bitmap(memory_map_uefi.msize, memory_map_uefi.mmap, memory_map_uefi.dsize, &bitmap_ptr) == 1) {
+	if(create_bitmap(memory_map_uefi.msize, memory_map_uefi.mmap, memory_map_uefi.dsize, &bitmap_ptr, &bitmap_size) == 1) {
 		goto end;
 	}
 
 	Print(L"@bitmap = %p\n", (void *) bitmap_ptr);
+	Print(L"bitmap_size = %llu\n", bitmap_size);
 
 	/* get memory map */
 	memory_map_uefi.msize = sizeof(memory_map_uefi.mmap);
@@ -213,15 +215,15 @@ int get_mem_map(UINTN *msize, uint8_t *mmap, UINTN *mkey, UINTN *dsize)
 	return 0;
 }
 
-int create_bitmap(UINTN msize, uint8_t mmap[], UINTN dsize, uint8_t **bitmap_ptr_ptr)
+int create_bitmap(UINTN msize, uint8_t mmap[], UINTN dsize, uint8_t **bitmap_ptr_ptr, uint64_t * bitmap_size_ptr)
 {
 	uint64_t *physical_start_addr = (uint64_t *) UINT64_MAX, *physical_end_addr = (uint64_t *) 0, ram_size;
 	
 	get_ram_attrs(msize, mmap, dsize, &physical_start_addr, &physical_end_addr, &ram_size);
 
-	const int bitmap_size = ram_size/PAGE_SIZE;
-	Print(L"bitmap_size = %llu\n", bitmap_size);
+	const uint64_t bitmap_size = ram_size/PAGE_SIZE;
 
+	*bitmap_size_ptr = bitmap_size;
 	
 	EFI_STATUS Status = uefi_call_wrapper(BS->AllocatePool, 3, EfiLoaderData, bitmap_size, (void **) bitmap_ptr_ptr);
     	if (EFI_ERROR(Status)) {
@@ -229,6 +231,9 @@ int create_bitmap(UINTN msize, uint8_t mmap[], UINTN dsize, uint8_t **bitmap_ptr
         	*bitmap_ptr_ptr = NULL;
 		return 1;
     	}
+
+	/* fill the bitmap buffer with 0 */	
+	uefi_call_wrapper(BS->SetMem, 3, (void *) *bitmap_ptr_ptr, bitmap_size, 0);
 
 	return 0;
 }
