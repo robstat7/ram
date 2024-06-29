@@ -159,14 +159,14 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 
 	/* initialize terminal output */
-	// tty_out_init(frame_buffer);
+	tty_out_init(frame_buffer);
 
 	/* fill terminal background color with white */
-	// fill_tty_bgcolor();
+	fill_tty_bgcolor();
 
 
 	/* jump to kernel */
-	// main(xsdp);
+	main(xsdp);
 	// main(xsdp, &memory_map_uefi);
 
 
